@@ -71,7 +71,7 @@ function compile(el) {
 module.exports = {
 	$compile: compile
 };
-},{"./assert":1,"./config":3,"./directive":4,"./scene":8}],3:[function(require,module,exports){
+},{"./assert":1,"./config":3,"./directive":4,"./scene":9}],3:[function(require,module,exports){
 module.exports = {
 	prefix: 'd-',
 	forceEndTime: 500
@@ -228,6 +228,14 @@ module.exports = {
 	}
 }
 },{"./assert":1}],8:[function(require,module,exports){
+var compiler = require('./compile');
+
+window.X = {
+	bootstrap: function() {
+		compiler.$compile();
+	}
+}
+},{"./compile":2}],9:[function(require,module,exports){
 _ = require('./utils');
 event = require('./event');
 
@@ -255,7 +263,7 @@ Scene.prototype = _.extend(event, {
 });
 
 module.exports = Scene;
-},{"./event":7,"./utils":9}],9:[function(require,module,exports){
+},{"./event":7,"./utils":10}],10:[function(require,module,exports){
 module.exports = {
 	extend: function(s, ss) {
 		var res = {};
@@ -268,4 +276,4 @@ module.exports = {
 		return res;
 	}
 }
-},{}]},{},[2])
+},{}]},{},[8])
