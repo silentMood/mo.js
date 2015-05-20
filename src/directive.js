@@ -1,5 +1,5 @@
 var config = require('./config');
-var directives = require('./directives')
+var directives = require('./directives/index')
 
 function register(nodeName, expression, scene, el) {
 	//todo add some assert

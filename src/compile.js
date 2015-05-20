@@ -1,7 +1,7 @@
 var config = require('./config');
 var assert = require('./assert');
 var Scene = require('./scene');
-var Directive = requrire('./directive');
+var Directive = require('./directive');
 
 var sceneIdentifier = 'scene';
 

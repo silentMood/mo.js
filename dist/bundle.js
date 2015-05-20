@@ -9,7 +9,7 @@ module.exports = function(expression) {
 var config = require('./config');
 var assert = require('./assert');
 var Scene = require('./scene');
-var Directive = requrire('./directive');
+var Directive = require('./directive');
 
 var sceneIdentifier = 'scene';
 
@@ -71,12 +71,138 @@ function compile(el) {
 module.exports = {
 	$compile: compile
 };
-},{"./assert":1,"./config":3,"./scene":5}],3:[function(require,module,exports){
+},{"./assert":1,"./config":3,"./directive":4,"./scene":8}],3:[function(require,module,exports){
 module.exports = {
 	prefix: 'd-',
 	forceEndTime: 500
 };
 },{}],4:[function(require,module,exports){
+var config = require('./config');
+var directives = require('./directives/index')
+
+function register(nodeName, expression, scene, el) {
+	//todo add some assert
+	Dir = directives[nodeName];
+	if(Dir) {
+		Dir(expression, scene, el);
+	}
+}
+
+module.exports = {
+	$register: register
+};
+},{"./config":3,"./directives/index":5}],5:[function(require,module,exports){
+var transition = require('./transition');
+
+module.exports = transition;
+},{"./transition":6}],6:[function(require,module,exports){
+var config = require('../config');
+
+EnterTransMap = {};
+
+LeftTransMap = {};
+
+AnimationController = function(expression, scene, el) {
+  //trigger all the animation event
+  function triggerTransition(transitionMap, cb) {
+    var keys = Object.keys(transitionMap).sort();
+    if (!keys.length) return cb();
+
+    var forced = false;
+    var timeout = setTimeout(function() {
+      forced = true && cb();
+    }, config.forceEndTime);
+
+    var idx = 0;
+    function go(key) {
+      //end design
+      if (idx > keys.length) {
+        if (forced) return;
+        clearTimeout(timeout);
+        cb();
+      }
+
+      var transitionendNums = 0;
+      transitionMap[key].forEach(function(elem) {
+        var called, handleEvent;
+        setTimeout(function() {
+          $(elem.el).addClass(elem.transEffect);
+        }, 0);
+        
+        cb = function() {
+          if (called) return;
+          called = true;
+
+          transitionendNums++;
+          if (transitionendNums === transitionMap[key].length) {
+            if (idx <= keys.length) {
+              return go(keys[idx++]);
+            }
+          }
+        };
+
+        var called = false;
+        setTimeout(cb, config.forceEndTime);
+
+        elem.el.addEventListener("transitionend", function(e) {
+          e.stopPropagation();
+          cb();
+        });
+      });
+    };
+    go(keys[idx++]);
+  };
+
+  scene.$on("TriggerAllElementsEnterTransition", function() {
+    triggerTransition(EnterTransMap, function() {
+      return scene.$emit("AllElementsEnterTransitionEnd");
+    });
+  });
+  scene.$on("TriggerAllElementsLeftTransition", function() {
+    triggerTransition(LeftTransMap, function() {
+      return vm.$emit("AllElementsLeftTransitionEnd");
+    });
+  });
+  scene.$on("ClearAllElementsEnterTransition", function() {
+    return EnterTransMap = {};
+  });
+  scene.$on("ClearAllElementsLeftTransition", function() {
+    return LeftTransMap = {};
+  });
+}
+
+EnterAnimation = function(expression, scene, el) {
+  var priority, transEffect;
+  priority = expression.split("/")[0];
+  transEffect = expression.split("/")[1];
+  if (!EnterTransMap[priority]) {
+    EnterTransMap[priority] = [];
+  }
+  return EnterTransMap[priority].push({
+    el: el,
+    transEffect: transEffect
+  });
+}
+
+LeftAnimation = function(expression, scene, el) {
+  var priority, transEffect;
+  priority = expression.split("/")[0];
+  transEffect = expression.split("/")[1];
+  if (!LeftTransMap[priority]) {
+    LeftTransMap[priority] = [];
+  }
+  return LeftTransMap[priority].push({
+    el: el,
+    transEffect: transEffect
+  });
+}
+
+module.exports = {
+  EnterAnimation: EnterAnimation,
+  LeftAnimation: LeftAnimation,
+  AnimationController: AnimationController
+}
+},{"../config":3}],7:[function(require,module,exports){
 assert = require('./assert');
 
 module.exports = {
@@ -101,7 +227,7 @@ module.exports = {
 		}
 	}
 }
-},{"./assert":1}],5:[function(require,module,exports){
+},{"./assert":1}],8:[function(require,module,exports){
 _ = require('./utils');
 event = require('./event');
 
@@ -129,7 +255,7 @@ Scene.prototype = _.extend(event, {
 });
 
 module.exports = Scene;
-},{"./event":4,"./utils":6}],6:[function(require,module,exports){
+},{"./event":7,"./utils":9}],9:[function(require,module,exports){
 module.exports = {
 	extend: function(s, ss) {
 		var res = {};
