@@ -32,7 +32,7 @@ module.exports = function(grunt) {
     watch: {
       livereload: {
         files: ["src/**/*.js", "tt/index.html"],
-        tasks: ["browserify"],
+        tasks: ["browserify", "exec:mv4test"],
         options: {
           livereload: 35729
         }

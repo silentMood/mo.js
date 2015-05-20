@@ -34,9 +34,11 @@ function compileDirectives(el, scene) {
 			continue;
 		}
 		for(var i = 0; i < $childNodes.length; i++) {
-			$nodes.push($childNodes[i]);
+			if($childNodes[i].nodeType != document.TEXT_NODE) {
+				$nodes.push($childNodes[i]);
+			}
 		}
-		$el.shift();
+		$nodes.shift();
 	}	
 }
 
