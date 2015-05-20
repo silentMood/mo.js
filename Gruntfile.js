@@ -12,16 +12,44 @@ module.exports = function(grunt) {
     exec: {
       clean: {
         command: 'rm -rf dist'
+      },
+      mv4test: {
+        command: 'cp dist/bundle.js tt/'
       }
     },
+    connect: {
+      server: {
+        options: {
+          base: ["tt"],
+          hostname: "0.0.0.0"
+        }
+      },
+      options: {
+        port: 8000,
+        livereload: 35729
+      }
+    },
+    watch: {
+      livereload: {
+        files: ["src/**/*.js", "tt/index.html"],
+        tasks: ["browserify"],
+        options: {
+          livereload: 35729
+        }
+      }
+    }
   });
 
   grunt.loadNpmTasks('grunt-browserify');
   grunt.loadNpmTasks('grunt-exec');
+  grunt.loadNpmTasks("grunt-contrib-connect");
+  grunt.loadNpmTasks("grunt-contrib-watch");
 
   grunt.registerTask('default', [
-    'browserify', 
-    //todo
+    'browserify',
+    'exec:mv4test',
+    "connect", 
+    "watch"
   ]);
   grunt.registerTask('build', [
     'browserify',
