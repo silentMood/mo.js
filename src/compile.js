@@ -1,25 +1,21 @@
+var config = require('./config');
 var assert = require('./assert');
 var Scene = require('./scene');
+var Directive = requrire('./directive');
+
 var sceneIdentifier = 'scene';
-var dPrefix = 'd-';
 
-function compile(el) {
+function linkDirectives(el, scene) {
 	assert(el !== null);
-	//may be other way , i totally have no idea on this
-	$scenes = document.querySelectorAll('.scene');
-	for(var i = 0; i < $scenes.length; i++) {
-		compileScenes($scenes[i]);
-	}
-}
-
-function compileScenes(el) {
-	assert(el !== null);
+	assert(scene !== null);
 
 	attrs = el.attributes;
 	for(var i = 0; i < attrs.length; i++) {
 		attr = attrs.item(i);
-		scene = new Scene({sid: attr.value});
-		compileDirectives(el, scene);
+		if(attr.nodeName.match(config.prefix)) {
+			//compile directive
+			Directive.$register(attr.nodeName, attr.value, scene, el);
+		}
 	}
 }
 
@@ -44,19 +40,26 @@ function compileDirectives(el, scene) {
 	}	
 }
 
-function linkDirectives(el, scene) {
+function compileScenes(el) {
 	assert(el !== null);
-	assert(scene !== null);
 
 	attrs = el.attributes;
 	for(var i = 0; i < attrs.length; i++) {
 		attr = attrs.item(i);
-		if(attr.nodeName.match(dPrefix)) {
-			//todo compile directive
-		}
+		scene = new Scene({sid: attr.value});
+		compileDirectives(el, scene);
+	}
+}
+
+function compile(el) {
+	assert(el !== null);
+	//first
+	$scenes = document.querySelectorAll('.scene');
+	for(var i = 0; i < $scenes.length; i++) {
+		compileScenes($scenes[i]);
 	}
 }
 
 module.exports = {
 	$compile: compile
-}
+};

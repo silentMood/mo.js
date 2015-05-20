@@ -2,6 +2,7 @@ _ = require('./utils');
 event = require('./event');
 
 function Scene() {
+	self.dirs = [];
 	
 }
 

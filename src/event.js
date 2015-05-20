@@ -15,7 +15,7 @@ module.exports = {
 	},
 	$emit: function(event) {
 		fns = this.events[event];
-		if (fns && instanceof fns === Array) {
+		if (fns && fns instanceof Array) {
 			fns.forEach(function(fn, idx) {
 				fn();
 			});
