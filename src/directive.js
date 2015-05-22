@@ -4,7 +4,7 @@ var event = require('./event');
 var directives = require('./directives/index');
 
 function linkDirective(expression) {
-	Dir = directives[this.dirName];
+	var Dir = directives[this.dirName];
 	if(Dir) {
 		Dir.bind(this)(expression);
 	}
@@ -19,12 +19,15 @@ function Directive(opts) {
 	assert(opts.scene !== null);
 	assert(opts.el !== null);
 
-	self = this;
+	var self = this;
+	self.events = {};
 
 	self.dirName = opts.dirName;
 	self.el = opts.el;
-	self.parent = opts.scene;
 	self.expression = opts.expression;
+	self.childs = [];
+	self.parent = opts.scene;
+	self.parent.childs.push(self);
 
 	linkDirective.bind(this)(self.expression);
 }

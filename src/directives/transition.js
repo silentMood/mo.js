@@ -6,7 +6,7 @@ EnterTransMap = {};
 LeftTransMap = {};
 
 AnimationController = function(expression) {
-  self = this;
+  var self = this;
   //trigger all the animation event
   function triggerTransition(transitionMap, cb) {
     var keys = Object.keys(transitionMap).sort();

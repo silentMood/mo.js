@@ -1,33 +1,31 @@
 _ = require('./utils');
 event = require('./event');
 
-baseId = 0;
+var baseId = 0;
 function generateSceneId() {
 	return baseId++;
 }
 
 function Scene(opts) {
-	self = this;
+	var self = this;
 	self.id = opts.sceneId ? opts.sceneId : generateSceneId();
 	self.el = opts.el;
+	self.events = {};
 
 	self.childs = self.dirs = [];
-	self.next = null;
+	self.parent = opts.root;
+	self.parent.childs.push(self);
 
 	self.states = {
 		canLeft: false
 	};
 
 	self.$on('EndRegisterDirectives', function() {
-		self.$emit('TriggerAllElementsEnterTransition');
+		self.$broadcast('TriggerAllElementsEnterTransition');
 	});
 
 	self.$on('AllElementsEnterTransitionEnd', function() {
 		self.states.canLeft = true;
-	});
-
-	self.$on('AllElementsLeftTransitionEnd', function() {
-		router.navigate(self.next);
 	});
 }
 

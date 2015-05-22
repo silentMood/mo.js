@@ -1,7 +1,7 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);throw new Error("Cannot find module '"+o+"'")}var f=n[o]={exports:{}};t[o][0].call(f.exports,function(e){var n=t[o][1][e];return s(n?n:e)},f,f.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 module.exports = function(expression) {
 	if(!expression) {
-		error = new Error("assert failed");
+		var error = new Error("assert failed");
 		throw error;
 	}
 };
@@ -17,18 +17,16 @@ function linkDirectives(el, scene) {
 	assert(el !== null);
 	assert(scene !== null);
 
-	attrs = el.attributes;
+	var attrs = el.attributes;
 	for(var i = 0; i < attrs.length; i++) {
 		attr = attrs.item(i);
 		if(attr.nodeName.match(config.prefix)) {
 			dir = new Directive({
 				dirName: attr.nodeName.replace(config.prefix, ''),
 				expression: attr.value,
+				scene: scene,
 				el: el
 			});
-			//confirm the relationship
-			scene.childs.push(dir);
-			dir.parent = scene;
 		}
 	}
 }
@@ -38,7 +36,7 @@ function compileDirectives(el, scene) {
 	assert(scene !== null);
 
 	scene.$emit('BeginRegisterDirectives');
-	$nodes = [el];
+	var $nodes = [el];
 	while($nodes.length) {
 		$el = $nodes[0];
 		linkDirectives($el, scene);
@@ -76,10 +74,7 @@ function compileDirectives(el, scene) {
 function compile(el, root) {
 	assert(el !== null);
 	//first need to be refactored
-	scene = new Scene({sceneId: attr.value, el: el});
-	//confirm the relationship
-	root.childs.push(scene);
-	scene.parent = root;
+	var scene = new Scene({sceneId: attr.value, el: el, root: root});
 
 	compileDirectives(el, scene);
 }
@@ -99,7 +94,7 @@ var event = require('./event');
 var directives = require('./directives/index');
 
 function linkDirective(expression) {
-	Dir = directives[this.dirName];
+	var Dir = directives[this.dirName];
 	if(Dir) {
 		Dir.bind(this)(expression);
 	}
@@ -114,12 +109,15 @@ function Directive(opts) {
 	assert(opts.scene !== null);
 	assert(opts.el !== null);
 
-	self = this;
+	var self = this;
+	self.events = {};
 
 	self.dirName = opts.dirName;
 	self.el = opts.el;
-	self.parent = opts.scene;
 	self.expression = opts.expression;
+	self.childs = [];
+	self.parent = opts.scene;
+	self.parent.childs.push(self);
 
 	linkDirective.bind(this)(self.expression);
 }
@@ -132,10 +130,14 @@ var config = require('../config');
 var _ = require('../utils');
 
 function go(expression) {
-	self = this;
+	var self = this;
+	
+	self.parent.$on("AllElementsLeftTransitionEnd", function() {
+		self.$dispatch('SceneSwitch', expression);
+	});
 
 	self.el.addEventListener('click', function(){
-		self.$dispatch('SceneSwitch', expression);
+		self.parent.$broadcast("TriggerAllElementsLeftTransition");	
 	});
 }
 
@@ -156,7 +158,7 @@ EnterTransMap = {};
 LeftTransMap = {};
 
 AnimationController = function(expression) {
-  self = this;
+  var self = this;
   //trigger all the animation event
   function triggerTransition(transitionMap, cb) {
     var keys = Object.keys(transitionMap).sort();
@@ -260,7 +262,6 @@ module.exports = {
 assert = require('./assert');
 
 module.exports = {
-	events: {},
 	$on: function(event, fn, context) {
 		assert(typeof event === 'string');
 		assert(typeof fn === 'function');
@@ -274,7 +275,7 @@ module.exports = {
 		this.events[event].push(fn.bind(context));
 	},
 	$emit: function(event, info) {
-		fns = this.events[event];
+		var fns = this.events[event];
 		if (fns && fns instanceof Array) {
 			fns.forEach(function(fn, idx) {
 				fn(info);
@@ -288,6 +289,18 @@ module.exports = {
 			scope = parent;
 			scope.$emit(event, info);
 		}
+	},
+	$broadcast: function(event, info) {
+		var scopes = [this];
+		while(scopes.length) {
+			var scope = scopes[0];
+			var childs = scope.childs
+			for(var i = 0; i < childs.length; i++) {
+				childs[i].$emit(event, info);
+				scopes.push(childs[i]);
+			}
+			scopes.shift();
+		}
 	}
 }
 },{"./assert":1}],9:[function(require,module,exports){
@@ -298,33 +311,31 @@ window.X = X;
 _ = require('./utils');
 event = require('./event');
 
-baseId = 0;
+var baseId = 0;
 function generateSceneId() {
 	return baseId++;
 }
 
 function Scene(opts) {
-	self = this;
+	var self = this;
 	self.id = opts.sceneId ? opts.sceneId : generateSceneId();
 	self.el = opts.el;
+	self.events = {};
 
 	self.childs = self.dirs = [];
-	self.next = null;
+	self.parent = opts.root;
+	self.parent.childs.push(self);
 
 	self.states = {
 		canLeft: false
 	};
 
 	self.$on('EndRegisterDirectives', function() {
-		self.$emit('TriggerAllElementsEnterTransition');
+		self.$broadcast('TriggerAllElementsEnterTransition');
 	});
 
 	self.$on('AllElementsEnterTransitionEnd', function() {
 		self.states.canLeft = true;
-	});
-
-	self.$on('AllElementsLeftTransitionEnd', function() {
-		router.navigate(self.next);
 	});
 }
 
@@ -364,6 +375,7 @@ var compiler = require('./compile');
 
 function X(opts) {
 	var self = this;
+	self.events = {};
 
 	var el = null;
 	if(opts && opts.elId) {
@@ -373,7 +385,7 @@ function X(opts) {
 		el = document.body;
 	}
 
-	attrs = el.attributes;
+	var attrs = el.attributes;
 	for(var i = 0; i < attrs.length; i ++) {
 		attr = attrs.item(i);
 		if(attr.nodeName.match(/mainScene/i)) {

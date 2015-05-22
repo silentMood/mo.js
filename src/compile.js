@@ -9,18 +9,16 @@ function linkDirectives(el, scene) {
 	assert(el !== null);
 	assert(scene !== null);
 
-	attrs = el.attributes;
+	var attrs = el.attributes;
 	for(var i = 0; i < attrs.length; i++) {
 		attr = attrs.item(i);
 		if(attr.nodeName.match(config.prefix)) {
 			dir = new Directive({
 				dirName: attr.nodeName.replace(config.prefix, ''),
 				expression: attr.value,
+				scene: scene,
 				el: el
 			});
-			//confirm the relationship
-			scene.childs.push(dir);
-			dir.parent = scene;
 		}
 	}
 }
@@ -30,7 +28,7 @@ function compileDirectives(el, scene) {
 	assert(scene !== null);
 
 	scene.$emit('BeginRegisterDirectives');
-	$nodes = [el];
+	var $nodes = [el];
 	while($nodes.length) {
 		$el = $nodes[0];
 		linkDirectives($el, scene);
@@ -68,10 +66,7 @@ function compileDirectives(el, scene) {
 function compile(el, root) {
 	assert(el !== null);
 	//first need to be refactored
-	scene = new Scene({sceneId: attr.value, el: el});
-	//confirm the relationship
-	root.childs.push(scene);
-	scene.parent = root;
+	var scene = new Scene({sceneId: attr.value, el: el, root: root});
 
 	compileDirectives(el, scene);
 }

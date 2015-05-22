@@ -1,6 +1,6 @@
 module.exports = function(expression) {
 	if(!expression) {
-		error = new Error("assert failed");
+		var error = new Error("assert failed");
 		throw error;
 	}
 };

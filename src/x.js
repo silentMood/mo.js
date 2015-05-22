@@ -5,6 +5,7 @@ var compiler = require('./compile');
 
 function X(opts) {
 	var self = this;
+	self.events = {};
 
 	var el = null;
 	if(opts && opts.elId) {
@@ -14,7 +15,7 @@ function X(opts) {
 		el = document.body;
 	}
 
-	attrs = el.attributes;
+	var attrs = el.attributes;
 	for(var i = 0; i < attrs.length; i ++) {
 		attr = attrs.item(i);
 		if(attr.nodeName.match(/mainScene/i)) {
