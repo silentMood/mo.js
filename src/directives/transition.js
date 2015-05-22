@@ -5,7 +5,8 @@ EnterTransMap = {};
 
 LeftTransMap = {};
 
-AnimationController = function(expression, scene, el) {
+AnimationController = function(expression) {
+  self = this;
   //trigger all the animation event
   function triggerTransition(transitionMap, cb) {
     var keys = Object.keys(transitionMap).sort();
@@ -56,46 +57,46 @@ AnimationController = function(expression, scene, el) {
     go(keys[idx++]);
   };
 
-  scene.$on("TriggerAllElementsEnterTransition", function() {
+  self.$on("TriggerAllElementsEnterTransition", function() {
     triggerTransition(EnterTransMap, function() {
-      return scene.$emit("AllElementsEnterTransitionEnd");
+      return self.$dispatch("AllElementsEnterTransitionEnd");
     });
   });
-  scene.$on("TriggerAllElementsLeftTransition", function() {
+  self.$on("TriggerAllElementsLeftTransition", function() {
     triggerTransition(LeftTransMap, function() {
-      return vm.$emit("AllElementsLeftTransitionEnd");
+      return self.$dispatch("AllElementsLeftTransitionEnd");
     });
   });
-  scene.$on("ClearAllElementsEnterTransition", function() {
+  self.$on("ClearAllElementsEnterTransition", function() {
     return EnterTransMap = {};
   });
-  scene.$on("ClearAllElementsLeftTransition", function() {
+  self.$on("ClearAllElementsLeftTransition", function() {
     return LeftTransMap = {};
   });
 }
 
-EnterAnimation = function(expression, scene, el) {
+EnterAnimation = function(expression) {
   var priority, transEffect;
   priority = expression.split("/")[0];
   transEffect = expression.split("/")[1];
   if (!EnterTransMap[priority]) {
     EnterTransMap[priority] = [];
   }
-  return EnterTransMap[priority].push({
-    el: el,
+  EnterTransMap[priority].push({
+    el: this.el,
     transEffect: transEffect
   });
 }
 
-LeftAnimation = function(expression, scene, el) {
+LeftAnimation = function(expression) {
   var priority, transEffect;
   priority = expression.split("/")[0];
   transEffect = expression.split("/")[1];
   if (!LeftTransMap[priority]) {
     LeftTransMap[priority] = [];
   }
-  return LeftTransMap[priority].push({
-    el: el,
+  LeftTransMap[priority].push({
+    el: this.el,
     transEffect: transEffect
   });
 }

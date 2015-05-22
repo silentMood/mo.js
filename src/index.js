@@ -1,7 +1,3 @@
-var compiler = require('./compile');
+var X = require('./x');
 
-window.X = {
-	bootstrap: function() {
-		compiler.$compile();
-	}
-}
+window.X = X;

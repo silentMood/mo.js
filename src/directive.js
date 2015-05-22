@@ -1,11 +1,12 @@
+var _ = require('./utils');
 var config = require('./config');
-var directives = require('./directives/index')
+var event = require('./event');
+var directives = require('./directives/index');
 
-function register(dirname, expression, scene, el) {
-	//todo add some assert
+function linkDirective(expression) {
 	Dir = directives[dirname];
 	if(Dir) {
-		Dir(expression, scene, el);
+		Dir(expression);
 	}
 	else {
 		var err = new Error('can not recognise' + dirname + 'directive');
@@ -13,6 +14,24 @@ function register(dirname, expression, scene, el) {
 	}
 }
 
-module.exports = {
-	$register: register
-};
+function Directive(opts) {
+	assert(opts.expression !== null);
+	assert(opts.scene !== null);
+	assert(opts.el !== null);
+
+	self = this;
+
+	self.scene = opts.scene;
+	self.el = opts.el;
+
+	linkDirective.bind(this)(expression);
+}
+
+Directive.prototype = _.extend(events, {
+	$dispatch: function(eventName) {
+
+
+	}
+});
+
+module.exports = Directive;

@@ -13,8 +13,12 @@ function linkDirectives(el, scene) {
 	for(var i = 0; i < attrs.length; i++) {
 		attr = attrs.item(i);
 		if(attr.nodeName.match(config.prefix)) {
-			//compile directive
-			Directive.$register(attr.nodeName.replace(config.prefix, ''), attr.value, scene, el);
+			scene.dirs.push(new Directive({
+				dirName: attr.nodeName.replace(config.prefix, ''),
+				expression: attr.value,
+				scene: scene,
+				el: el
+			}));
 		}
 	}
 }
@@ -44,23 +48,24 @@ function compileDirectives(el, scene) {
 	scene.$emit('EndRegisterDirectives');
 }
 
-function compileScenes(el) {
+function compileScenes(el, root) {
 	assert(el !== null);
 
 	attrs = el.attributes;
 	for(var i = 0; i < attrs.length; i++) {
 		attr = attrs.item(i);
-		scene = new Scene({sid: attr.value});
+		scene = new Scene({sceneId: attr.value, root: root, el: el});
+		root.scenes.push(scene);
 		compileDirectives(el, scene);
 	}
 }
 
-function compile(el) {
+function compile(el, root) {
 	assert(el !== null);
-	//first
-	$scenes = document.querySelectorAll('.scene');
+	//first need to be refactored
+	$scenes = el.querySelectorAll('.scene');
 	for(var i = 0; i < $scenes.length; i++) {
-		compileScenes($scenes[i]);
+		compileScenes($scenes[i], root);
 	}
 }
 

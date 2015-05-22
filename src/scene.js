@@ -1,30 +1,37 @@
 _ = require('./utils');
 event = require('./event');
 
-function Scene() {
+baseId = 0;
+function generateSceneId() {
+	return baseId++;
+}
+
+function Scene(opts) {
 	self = this;
+	self.id = opts.sceneId ? opts.sceneId : generateSceneId();
+	self.el = opts.el;
 
 	self.dirs = [];
-	self.events = {};
+	self.next = null;
 
 	self.states = {
-		enterfinish: false,
-		leftfinish: false
+		canLeft: false
 	};
 
-	self.$on('EndRegisterDirectives', function() {
-		self.$emit('TriggerAllElementsEnterTransition');
-	});
-
 	self.$on('AllElementsEnterTransitionEnd', function() {
-		self.states.enterfinish = true;
+		self.states.canLeft = true;
 	});
 
 	self.$on('AllElementsLeftTransitionEnd', function() {
-		self.states.leftfinish = true;
+		router.navigate(self.next);
 	});
 }
 
-Scene.prototype = _.extend(event, {});
+Scene.prototype = _.extend(event, {
+	$goto: function(sceneId) {
+		this.next = sceneId;
+		this.$emit("TriggerAllElementsLeftTransition");
+	},
+});
 
 module.exports = Scene;

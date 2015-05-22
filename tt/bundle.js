@@ -21,8 +21,12 @@ function linkDirectives(el, scene) {
 	for(var i = 0; i < attrs.length; i++) {
 		attr = attrs.item(i);
 		if(attr.nodeName.match(config.prefix)) {
-			//compile directive
-			Directive.$register(attr.nodeName.replace(config.prefix, ''), attr.value, scene, el);
+			scene.dirs.push(new Directive({
+				dirName: attr.nodeName.replace(config.prefix, ''),
+				expression: attr.value,
+				scene: scene,
+				el: el
+			}));
 		}
 	}
 }
@@ -52,43 +56,45 @@ function compileDirectives(el, scene) {
 	scene.$emit('EndRegisterDirectives');
 }
 
-function compileScenes(el) {
+function compileScenes(el, root) {
 	assert(el !== null);
 
 	attrs = el.attributes;
 	for(var i = 0; i < attrs.length; i++) {
 		attr = attrs.item(i);
-		scene = new Scene({sid: attr.value});
+		scene = new Scene({sceneId: attr.value, root: root, el: el});
+		root.scenes.push(scene);
 		compileDirectives(el, scene);
 	}
 }
 
-function compile(el) {
+function compile(el, root) {
 	assert(el !== null);
-	//first
-	$scenes = document.querySelectorAll('.scene');
+	//first need to be refactored
+	$scenes = el.querySelectorAll('.scene');
 	for(var i = 0; i < $scenes.length; i++) {
-		compileScenes($scenes[i]);
+		compileScenes($scenes[i], root);
 	}
 }
 
 module.exports = {
 	$compile: compile
 };
-},{"./assert":1,"./config":3,"./directive":4,"./scene":9}],3:[function(require,module,exports){
+},{"./assert":1,"./config":3,"./directive":4,"./scene":10}],3:[function(require,module,exports){
 module.exports = {
 	prefix: 'd-',
 	forceEndTime: 500
 };
 },{}],4:[function(require,module,exports){
+var _ = require('./utils');
 var config = require('./config');
-var directives = require('./directives/index')
+var event = require('./event');
+var directives = require('./directives/index');
 
-function register(dirname, expression, scene, el) {
-	//todo add some assert
+function linkDirective(expression) {
 	Dir = directives[dirname];
 	if(Dir) {
-		Dir(expression, scene, el);
+		Dir(expression);
 	}
 	else {
 		var err = new Error('can not recognise' + dirname + 'directive');
@@ -96,14 +102,49 @@ function register(dirname, expression, scene, el) {
 	}
 }
 
-module.exports = {
-	$register: register
-};
-},{"./config":3,"./directives/index":5}],5:[function(require,module,exports){
-var transition = require('./transition');
+function Directive(opts) {
+	assert(opts.expression !== null);
+	assert(opts.scene !== null);
+	assert(opts.el !== null);
 
-module.exports = transition;
-},{"./transition":6}],6:[function(require,module,exports){
+	self = this;
+
+	self.scene = opts.scene;
+	self.el = opts.el;
+
+	linkDirective.bind(this)(expression);
+}
+
+Directive.prototype = _.extend(events, {
+	$dispatch: function(eventName) {
+
+
+	}
+});
+
+module.exports = Directive;
+},{"./config":3,"./directives/index":5,"./event":8,"./utils":11}],5:[function(require,module,exports){
+var transition = require('./transition');
+var stage = require('./stage');
+
+module.exports = _.extend(transition, stage);
+},{"./stage":6,"./transition":7}],6:[function(require,module,exports){
+var assert = require('../assert');
+var config = require('../config');
+
+function stage(expression) {
+	self = this;
+
+	self.$on('SceneSwitch', function(opts) {
+		//todo insertNewScene	
+
+	});
+}
+
+module.exports = {
+	stage: stage
+};
+},{"../assert":1,"../config":3}],7:[function(require,module,exports){
 var config = require('../config');
 var _ = require('../utils');
 
@@ -111,7 +152,8 @@ EnterTransMap = {};
 
 LeftTransMap = {};
 
-AnimationController = function(expression, scene, el) {
+AnimationController = function(expression) {
+  self = this;
   //trigger all the animation event
   function triggerTransition(transitionMap, cb) {
     var keys = Object.keys(transitionMap).sort();
@@ -162,46 +204,46 @@ AnimationController = function(expression, scene, el) {
     go(keys[idx++]);
   };
 
-  scene.$on("TriggerAllElementsEnterTransition", function() {
+  self.$on("TriggerAllElementsEnterTransition", function() {
     triggerTransition(EnterTransMap, function() {
-      return scene.$emit("AllElementsEnterTransitionEnd");
+      return self.$dispatch("AllElementsEnterTransitionEnd");
     });
   });
-  scene.$on("TriggerAllElementsLeftTransition", function() {
+  self.$on("TriggerAllElementsLeftTransition", function() {
     triggerTransition(LeftTransMap, function() {
-      return vm.$emit("AllElementsLeftTransitionEnd");
+      return self.$dispatch("AllElementsLeftTransitionEnd");
     });
   });
-  scene.$on("ClearAllElementsEnterTransition", function() {
+  self.$on("ClearAllElementsEnterTransition", function() {
     return EnterTransMap = {};
   });
-  scene.$on("ClearAllElementsLeftTransition", function() {
+  self.$on("ClearAllElementsLeftTransition", function() {
     return LeftTransMap = {};
   });
 }
 
-EnterAnimation = function(expression, scene, el) {
+EnterAnimation = function(expression) {
   var priority, transEffect;
   priority = expression.split("/")[0];
   transEffect = expression.split("/")[1];
   if (!EnterTransMap[priority]) {
     EnterTransMap[priority] = [];
   }
-  return EnterTransMap[priority].push({
-    el: el,
+  EnterTransMap[priority].push({
+    el: this.el,
     transEffect: transEffect
   });
 }
 
-LeftAnimation = function(expression, scene, el) {
+LeftAnimation = function(expression) {
   var priority, transEffect;
   priority = expression.split("/")[0];
   transEffect = expression.split("/")[1];
   if (!LeftTransMap[priority]) {
     LeftTransMap[priority] = [];
   }
-  return LeftTransMap[priority].push({
-    el: el,
+  LeftTransMap[priority].push({
+    el: this.el,
     transEffect: transEffect
   });
 }
@@ -211,10 +253,11 @@ module.exports = {
   leftanimation: LeftAnimation,
   animationcontroller: AnimationController
 }
-},{"../config":3,"../utils":10}],7:[function(require,module,exports){
+},{"../config":3,"../utils":11}],8:[function(require,module,exports){
 assert = require('./assert');
 
 module.exports = {
+	events: {},
 	$on: function(event, fn, context) {
 		assert(typeof event === 'string');
 		assert(typeof fn === 'function');
@@ -236,33 +279,49 @@ module.exports = {
 		}
 	}
 }
-},{"./assert":1}],8:[function(require,module,exports){
-var compiler = require('./compile');
+},{"./assert":1}],9:[function(require,module,exports){
+var X = require('./x');
 
-window.X = {
-	bootstrap: function() {
-		compiler.$compile();
-	}
-}
-},{"./compile":2}],9:[function(require,module,exports){
+window.X = X;
+},{"./x":12}],10:[function(require,module,exports){
 _ = require('./utils');
 event = require('./event');
 
-function Scene() {
+baseId = 0;
+function generateSceneId() {
+	return baseId++;
+}
+
+function Scene(opts) {
 	self = this;
+	self.id = opts.sceneId ? opts.sceneId : generateSceneId();
+	self.el = opts.el;
 
 	self.dirs = [];
-	self.events = {};
+	self.next = null;
 
-	self.$on('EndRegisterDirectives', function() {
-		self.$emit('TriggerAllElementsEnterTransition');
+	self.states = {
+		canLeft: false
+	};
+
+	self.$on('AllElementsEnterTransitionEnd', function() {
+		self.states.canLeft = true;
+	});
+
+	self.$on('AllElementsLeftTransitionEnd', function() {
+		router.navigate(self.next);
 	});
 }
 
-Scene.prototype = _.extend(event, {});
+Scene.prototype = _.extend(event, {
+	$goto: function(sceneId) {
+		this.next = sceneId;
+		this.$emit("TriggerAllElementsLeftTransition");
+	},
+});
 
 module.exports = Scene;
-},{"./event":7,"./utils":10}],10:[function(require,module,exports){
+},{"./event":8,"./utils":11}],11:[function(require,module,exports){
 module.exports = {
 	extend: function(s, ss) {
 		var res = {};
@@ -287,4 +346,31 @@ module.exports = {
 	  }
 	}
 }
-},{}]},{},[8])
+},{}],12:[function(require,module,exports){
+var assert = require('./assert');
+var _ = require('./utils');
+var event = require('./event');
+var compiler = require('./compile');
+
+function X(opts) {
+	var el = null;
+	if(opts && opts.elId) {
+		el = document.querySelector('#' + opts.elId);
+	}
+	else {
+		el = document.body;
+	}
+
+	this.el = el;
+	this.scenes = [];
+	compiler.$compile(this.el, this);
+}
+
+X.prototype = _.extend(event, {
+	$redirect: function(sceneId) {
+		this.$emit("TriggerAllElementsLeftTransition");
+	},
+});
+
+module.exports = X;
+},{"./assert":1,"./compile":2,"./event":8,"./utils":11}]},{},[9])

@@ -1,3 +1,4 @@
 var transition = require('./transition');
+var stage = require('./stage');
 
-module.exports = transition;
+module.exports = _.extend(transition, stage);
