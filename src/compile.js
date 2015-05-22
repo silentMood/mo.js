@@ -50,28 +50,30 @@ function compileDirectives(el, scene) {
 	scene.$emit('EndRegisterDirectives');
 }
 
-function compileScenes(el, root) {
-	assert(el !== null);
+// function compileScenes(el, root) {
+// 	assert(el !== null);
 
-	attrs = el.attributes;
-	for(var i = 0; i < attrs.length; i++) {
-		attr = attrs.item(i);
-		scene = new Scene({sceneId: attr.value, el: el});
-		//confirm the relationship
-		root.childs.push(scene);
-		scene.parent = root;
+// 	attrs = el.attributes;
+// 	for(var i = 0; i < attrs.length; i++) {
+// 		attr = attrs.item(i);
+// 		scene = new Scene({sceneId: attr.value, el: el});
+// 		//confirm the relationship
+// 		root.childs.push(scene);
+// 		scene.parent = root;
 
-		compileDirectives(el, scene);
-	}
-}
+// 		compileDirectives(el, scene);
+// 	}
+// }
 
 function compile(el, root) {
 	assert(el !== null);
 	//first need to be refactored
-	$scenes = el.querySelectorAll('.scene');
-	for(var i = 0; i < $scenes.length; i++) {
-		compileScenes($scenes[i], root);
-	}
+	scene = new Scene({sceneId: attr.value, el: el});
+	//confirm the relationship
+	root.childs.push(scene);
+	scene.parent = root;
+
+	compileDirectives(el, scene);
 }
 
 module.exports = {

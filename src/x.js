@@ -11,17 +11,26 @@ function X(opts) {
 	else {
 		el = document.body;
 	}
-	console.log(el);
+
+	attrs = el.attributes;
+	for(var i = 0; i < attrs.length; i ++) {
+		attr = attrs.item(i);
+		if(attr.nodeName.match(/mainScene/i)) {
+			this.currentView = attr.value;
+		}
+	}
+	if(!this.currentView) {
+		this.currentView = 'scene1';
+	}
 
 	this.el = el;
-	this.childs = [];
+	this.childs = this.scenes = [];
+	template = document.getElementById(this.currentView).innerHTML;
+
+	this.el.innerHTML = template;
 	compiler.$compile(this.el, this);
 }
 
-X.prototype = _.extend(event, {
-	$redirect: function(sceneId) {
-		this.$emit("TriggerAllElementsLeftTransition");
-	},
-});
+X.prototype = _.extend(event, {});
 
 module.exports = X;

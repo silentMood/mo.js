@@ -11,7 +11,7 @@ function Scene(opts) {
 	self.id = opts.sceneId ? opts.sceneId : generateSceneId();
 	self.el = opts.el;
 
-	self.childs = [];
+	self.childs = self.dirs = [];
 	self.next = null;
 
 	self.states = {

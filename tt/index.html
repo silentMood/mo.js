@@ -17,18 +17,22 @@
 </style>
 </head>
 <body>
-
-<div class="scene" d-animationcontroller=''>
-	<p d-EnterAnimation="1/fade-enter">scene1</p>
-	<p d-EnterAnimation="2/fade-enter">scene2</p>
-	<p d-EnterAnimation="3/fade-enter">scene3</p>
-	<p d-EnterAnimation="4/fade-enter">scene4</p>
-	<p d-EnterAnimation="5/fade-enter">scene5</p>
+<div id="app" mainScene="scene1">
 </div>
+
+<script type="text/template" id="scene1">
+	<div class="scene" d-AnimationController="">
+		<p d-EnterAnimation="1/fade-enter">scene1</p>
+		<p d-EnterAnimation="2/fade-enter">scene2</p>
+		<p d-EnterAnimation="3/fade-enter">scene3</p>
+		<p d-EnterAnimation="4/fade-enter">scene4</p>
+		<p d-EnterAnimation="5/fade-enter">scene5</p>
+	</div>	
+</script>
 
 <script src="bundle.js"></script>
 <script>
-	x = new X;
+	x = new X({elId: "app"});
 </script>
 </body>
 </html>

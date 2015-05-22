@@ -58,28 +58,30 @@ function compileDirectives(el, scene) {
 	scene.$emit('EndRegisterDirectives');
 }
 
-function compileScenes(el, root) {
-	assert(el !== null);
+// function compileScenes(el, root) {
+// 	assert(el !== null);
 
-	attrs = el.attributes;
-	for(var i = 0; i < attrs.length; i++) {
-		attr = attrs.item(i);
-		scene = new Scene({sceneId: attr.value, el: el});
-		//confirm the relationship
-		root.childs.push(scene);
-		scene.parent = root;
+// 	attrs = el.attributes;
+// 	for(var i = 0; i < attrs.length; i++) {
+// 		attr = attrs.item(i);
+// 		scene = new Scene({sceneId: attr.value, el: el});
+// 		//confirm the relationship
+// 		root.childs.push(scene);
+// 		scene.parent = root;
 
-		compileDirectives(el, scene);
-	}
-}
+// 		compileDirectives(el, scene);
+// 	}
+// }
 
 function compile(el, root) {
 	assert(el !== null);
 	//first need to be refactored
-	$scenes = el.querySelectorAll('.scene');
-	for(var i = 0; i < $scenes.length; i++) {
-		compileScenes($scenes[i], root);
-	}
+	scene = new Scene({sceneId: attr.value, el: el});
+	//confirm the relationship
+	root.childs.push(scene);
+	scene.parent = root;
+
+	compileDirectives(el, scene);
 }
 
 module.exports = {
@@ -315,7 +317,7 @@ function Scene(opts) {
 	self.id = opts.sceneId ? opts.sceneId : generateSceneId();
 	self.el = opts.el;
 
-	self.childs = [];
+	self.childs = self.dirs = [];
 	self.next = null;
 
 	self.states = {
@@ -382,18 +384,27 @@ function X(opts) {
 	else {
 		el = document.body;
 	}
-	console.log(el);
+
+	attrs = el.attributes;
+	for(var i = 0; i < attrs.length; i ++) {
+		attr = attrs.item(i);
+		if(attr.nodeName.match(/mainScene/i)) {
+			this.currentView = attr.value;
+		}
+	}
+	if(!this.currentView) {
+		this.currentView = 'scene1';
+	}
 
 	this.el = el;
-	this.childs = [];
+	this.childs = this.scenes = [];
+	template = document.getElementById(this.currentView).innerHTML;
+
+	this.el.innerHTML = template;
 	compiler.$compile(this.el, this);
 }
 
-X.prototype = _.extend(event, {
-	$redirect: function(sceneId) {
-		this.$emit("TriggerAllElementsLeftTransition");
-	},
-});
+X.prototype = _.extend(event, {});
 
 module.exports = X;
 },{"./assert":1,"./compile":2,"./event":8,"./utils":11}]},{},[9])
