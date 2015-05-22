@@ -7,8 +7,21 @@ function Scene() {
 	self.dirs = [];
 	self.events = {};
 
+	self.states = {
+		enterfinish: false,
+		leftfinish: false
+	};
+
 	self.$on('EndRegisterDirectives', function() {
 		self.$emit('TriggerAllElementsEnterTransition');
+	});
+
+	self.$on('AllElementsEnterTransitionEnd', function() {
+		self.states.enterfinish = true;
+	});
+
+	self.$on('AllElementsLeftTransitionEnd', function() {
+		self.states.leftfinish = true;
 	});
 }
 
