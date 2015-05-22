@@ -21,12 +21,14 @@ function linkDirectives(el, scene) {
 	for(var i = 0; i < attrs.length; i++) {
 		attr = attrs.item(i);
 		if(attr.nodeName.match(config.prefix)) {
-			scene.childs.push(new Directive({
+			dir = new Directive({
 				dirName: attr.nodeName.replace(config.prefix, ''),
 				expression: attr.value,
-				parent: scene,
 				el: el
-			}));
+			});
+			//confirm the relationship
+			scene.childs.push(dir);
+			dir.parent = scene;
 		}
 	}
 }
@@ -62,8 +64,11 @@ function compileScenes(el, root) {
 	attrs = el.attributes;
 	for(var i = 0; i < attrs.length; i++) {
 		attr = attrs.item(i);
-		scene = new Scene({sceneId: attr.value, parent: root, el: el});
+		scene = new Scene({sceneId: attr.value, el: el});
+		//confirm the relationship
 		root.childs.push(scene);
+		scene.parent = root;
+
 		compileDirectives(el, scene);
 	}
 }
@@ -308,7 +313,6 @@ function generateSceneId() {
 function Scene(opts) {
 	self = this;
 	self.id = opts.sceneId ? opts.sceneId : generateSceneId();
-	self.parent = opts.root;
 	self.el = opts.el;
 
 	self.childs = [];
@@ -318,7 +322,9 @@ function Scene(opts) {
 		canLeft: false
 	};
 
-	self.$emit('TriggerAllElementsEnterTransition');
+	self.$on('EndRegisterDirectives', function() {
+		self.$emit('TriggerAllElementsEnterTransition');
+	});
 
 	self.$on('AllElementsEnterTransitionEnd', function() {
 		self.states.canLeft = true;
@@ -376,6 +382,7 @@ function X(opts) {
 	else {
 		el = document.body;
 	}
+	console.log(el);
 
 	this.el = el;
 	this.childs = [];

@@ -11,6 +11,7 @@ function X(opts) {
 	else {
 		el = document.body;
 	}
+	console.log(el);
 
 	this.el = el;
 	this.childs = [];

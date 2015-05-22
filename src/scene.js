@@ -9,7 +9,6 @@ function generateSceneId() {
 function Scene(opts) {
 	self = this;
 	self.id = opts.sceneId ? opts.sceneId : generateSceneId();
-	self.parent = opts.root;
 	self.el = opts.el;
 
 	self.childs = [];
@@ -19,7 +18,9 @@ function Scene(opts) {
 		canLeft: false
 	};
 
-	self.$emit('TriggerAllElementsEnterTransition');
+	self.$on('EndRegisterDirectives', function() {
+		self.$emit('TriggerAllElementsEnterTransition');
+	});
 
 	self.$on('AllElementsEnterTransitionEnd', function() {
 		self.states.canLeft = true;
