@@ -5,12 +5,21 @@
 	background: gray;
 }
 
+.scene p {
+	-webkit-transition: opacity 3s ease;
+	opacity: 0;
+}
+
+.fade-enter {
+	opacity: 1!important;
+}
+
 </style>
 </head>
 <body>
 
-<div class="scene">
-	<p>scene1</p>
+<div class="scene" d-animationcontroller=''>
+	<p d-EnterAnimation="1/fade-enter">scene1</p>
 </div>
 <div class="scene">
 	<p>scene2</p>

@@ -2,8 +2,8 @@ assert = require('./assert');
 
 module.exports = {
 	$on: function(event, fn, context) {
-		assert(typeof event !== 'string');
-		assert(typeof fn !== 'function');
+		assert(typeof event === 'string');
+		assert(typeof fn === 'function');
 
 		if(!this.events) {
 			this.events = {};

@@ -14,7 +14,7 @@ function linkDirectives(el, scene) {
 		attr = attrs.item(i);
 		if(attr.nodeName.match(config.prefix)) {
 			//compile directive
-			Directive.$register(attr.nodeName, attr.value, scene, el);
+			Directive.$register(attr.nodeName.replace(config.prefix, ''), attr.value, scene, el);
 		}
 	}
 }
@@ -23,6 +23,7 @@ function compileDirectives(el, scene) {
 	assert(el !== null);
 	assert(scene !== null);
 
+	scene.$emit('BeginRegisterDirectives');
 	$nodes = [el];
 	while($nodes.length) {
 		$el = $nodes[0];
@@ -39,7 +40,8 @@ function compileDirectives(el, scene) {
 			}
 		}
 		$nodes.shift();
-	}	
+	}
+	scene.$emit('EndRegisterDirectives');
 }
 
 function compileScenes(el) {

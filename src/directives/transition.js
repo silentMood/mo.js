@@ -1,4 +1,5 @@
 var config = require('../config');
+var _ = require('../utils');
 
 EnterTransMap = {};
 
@@ -21,14 +22,14 @@ AnimationController = function(expression, scene, el) {
       if (idx > keys.length) {
         if (forced) return;
         clearTimeout(timeout);
-        cb();
+        return cb();
       }
 
       var transitionendNums = 0;
       transitionMap[key].forEach(function(elem) {
         var called, handleEvent;
         setTimeout(function() {
-          $(elem.el).addClass(elem.transEffect);
+          _.addClass(elem.el, elem.transEffect);
         }, 0);
         
         cb = function() {
@@ -100,7 +101,7 @@ LeftAnimation = function(expression, scene, el) {
 }
 
 module.exports = {
-  EnterAnimation: EnterAnimation,
-  LeftAnimation: LeftAnimation,
-  AnimationController: AnimationController
+  enteranimation: EnterAnimation,
+  leftanimation: LeftAnimation,
+  animationcontroller: AnimationController
 }

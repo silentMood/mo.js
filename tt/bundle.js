@@ -22,7 +22,7 @@ function linkDirectives(el, scene) {
 		attr = attrs.item(i);
 		if(attr.nodeName.match(config.prefix)) {
 			//compile directive
-			Directive.$register(attr.nodeName, attr.value, scene, el);
+			Directive.$register(attr.nodeName.replace(config.prefix, ''), attr.value, scene, el);
 		}
 	}
 }
@@ -31,6 +31,7 @@ function compileDirectives(el, scene) {
 	assert(el !== null);
 	assert(scene !== null);
 
+	scene.$emit('BeginRegisterDirectives');
 	$nodes = [el];
 	while($nodes.length) {
 		$el = $nodes[0];
@@ -47,7 +48,8 @@ function compileDirectives(el, scene) {
 			}
 		}
 		$nodes.shift();
-	}	
+	}
+	scene.$emit('EndRegisterDirectives');
 }
 
 function compileScenes(el) {
@@ -82,11 +84,15 @@ module.exports = {
 var config = require('./config');
 var directives = require('./directives/index')
 
-function register(nodeName, expression, scene, el) {
+function register(dirname, expression, scene, el) {
 	//todo add some assert
-	Dir = directives[nodeName];
+	Dir = directives[dirname];
 	if(Dir) {
 		Dir(expression, scene, el);
+	}
+	else {
+		var err = new Error('can not recognise' + dirname + 'directive');
+		throw err;
 	}
 }
 
@@ -99,6 +105,7 @@ var transition = require('./transition');
 module.exports = transition;
 },{"./transition":6}],6:[function(require,module,exports){
 var config = require('../config');
+var _ = require('../utils');
 
 EnterTransMap = {};
 
@@ -121,14 +128,14 @@ AnimationController = function(expression, scene, el) {
       if (idx > keys.length) {
         if (forced) return;
         clearTimeout(timeout);
-        cb();
+        return cb();
       }
 
       var transitionendNums = 0;
       transitionMap[key].forEach(function(elem) {
         var called, handleEvent;
         setTimeout(function() {
-          $(elem.el).addClass(elem.transEffect);
+          _.addClass(elem.el, elem.transEffect);
         }, 0);
         
         cb = function() {
@@ -200,17 +207,17 @@ LeftAnimation = function(expression, scene, el) {
 }
 
 module.exports = {
-  EnterAnimation: EnterAnimation,
-  LeftAnimation: LeftAnimation,
-  AnimationController: AnimationController
+  enteranimation: EnterAnimation,
+  leftanimation: LeftAnimation,
+  animationcontroller: AnimationController
 }
-},{"../config":3}],7:[function(require,module,exports){
+},{"../config":3,"../utils":10}],7:[function(require,module,exports){
 assert = require('./assert');
 
 module.exports = {
 	$on: function(event, fn, context) {
-		assert(typeof event !== 'string');
-		assert(typeof fn !== 'function');
+		assert(typeof event === 'string');
+		assert(typeof fn === 'function');
 
 		if(!this.events) {
 			this.events = {};
@@ -242,27 +249,17 @@ _ = require('./utils');
 event = require('./event');
 
 function Scene() {
+	self = this;
+
 	self.dirs = [];
-	
+	self.events = {};
+
+	self.$on('EndRegisterDirectives', function() {
+		self.$emit('TriggerAllElementsEnterTransition');
+	});
 }
 
-Scene.prototype = _.extend(event, {
-	$status: 0,
-	$pushLifeStatus: function() {
-		$status++;
-
-		switch ($status) {
-			//before attached
-			case 1:
-				break;
-			//attached
-			case 2:
-				break;
-			default:
-				break;
-		}
-	}
-});
+Scene.prototype = _.extend(event, {});
 
 module.exports = Scene;
 },{"./event":7,"./utils":10}],10:[function(require,module,exports){
@@ -276,6 +273,18 @@ module.exports = {
 			});
 		});
 		return res;
+	},
+	hasClass: function (el, className) {
+  	return !!el.className.match(new RegExp('(\\s|^)'+className+'(\\s|$)'));
+	},
+	addClass: function (el, className) {
+  	if (!this.hasClass(el,className)) el.className += " "+className;
+	},
+	removeClass: function (el, className) {
+	  if (this.hasClass(el,className)) {
+	    var reg = new RegExp('(\\s|^)'+className+'(\\s|$)');
+	    el.className=el.className.replace(reg,' ');
+	  }
 	}
 }
 },{}]},{},[8])
