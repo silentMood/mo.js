@@ -26,16 +26,8 @@ module.exports = {
 		var parent = null;
 		var scope = this;
 		while(parent = scope.parent) {
-			parent.$emit(event, info);
-		}
-	},
-	$broadcast: function(event, info) {
-		var childs = null;
-		var scope = this;
-		while(childs = scope.childs) {
-			for(var i = 0; i < childs.length; i++) {
-				childs[i].$emit(event, info);
-			}
+			scope = parent;
+			scope.$emit(event, info);
 		}
 	}
 }

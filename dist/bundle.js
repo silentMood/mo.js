@@ -127,28 +127,27 @@ function Directive(opts) {
 Directive.prototype = _.extend(event, {});
 
 module.exports = Directive;
-},{"./config":3,"./directives/index":5,"./event":8,"./utils":11}],5:[function(require,module,exports){
-var transition = require('./transition');
-var stage = require('./stage');
-
-module.exports = _.extend(transition, stage);
-},{"./stage":6,"./transition":7}],6:[function(require,module,exports){
-var assert = require('../assert');
+},{"./config":3,"./directives/index":6,"./event":8,"./utils":11}],5:[function(require,module,exports){
 var config = require('../config');
+var _ = require('../utils');
 
-function stage(expression) {
+function go(expression) {
 	self = this;
 
-	self.$on('SceneSwitch', function(opts) {
-		//todo insertNewScene	
-
+	self.el.addEventListener('click', function(){
+		self.$dispatch('SceneSwitch', expression);
 	});
 }
 
 module.exports = {
-	stage: stage
-};
-},{"../assert":1,"../config":3}],7:[function(require,module,exports){
+  go: go
+}
+},{"../config":3,"../utils":11}],6:[function(require,module,exports){
+var transition = require('./transition');
+var go = require('./goto');
+
+module.exports = _.extend(transition, go);
+},{"./goto":5,"./transition":7}],7:[function(require,module,exports){
 var config = require('../config');
 var _ = require('../utils');
 
@@ -286,16 +285,8 @@ module.exports = {
 		var parent = null;
 		var scope = this;
 		while(parent = scope.parent) {
-			parent.$emit(event, info);
-		}
-	},
-	$broadcast: function(event, info) {
-		var childs = null;
-		var scope = this;
-		while(childs = scope.childs) {
-			for(var i = 0; i < childs.length; i++) {
-				childs[i].$emit(event, info);
-			}
+			scope = parent;
+			scope.$emit(event, info);
 		}
 	}
 }
@@ -337,12 +328,7 @@ function Scene(opts) {
 	});
 }
 
-Scene.prototype = _.extend(event, {
-	$goto: function(sceneId) {
-		this.next = sceneId;
-		this.$emit("TriggerAllElementsLeftTransition");
-	},
-});
+Scene.prototype = _.extend(event, {});
 
 module.exports = Scene;
 },{"./event":8,"./utils":11}],11:[function(require,module,exports){
@@ -377,6 +363,8 @@ var event = require('./event');
 var compiler = require('./compile');
 
 function X(opts) {
+	var self = this;
+
 	var el = null;
 	if(opts && opts.elId) {
 		el = document.querySelector('#' + opts.elId);
@@ -389,19 +377,27 @@ function X(opts) {
 	for(var i = 0; i < attrs.length; i ++) {
 		attr = attrs.item(i);
 		if(attr.nodeName.match(/mainScene/i)) {
-			this.currentView = attr.value;
+			self.currentView = attr.value;
 		}
 	}
-	if(!this.currentView) {
-		this.currentView = 'scene1';
+	if(!self.currentView) {
+		self.currentView = 'scene1';
 	}
 
-	this.el = el;
-	this.childs = this.scenes = [];
-	template = document.getElementById(this.currentView).innerHTML;
+	self.el = el;
+	self.childs = self.scenes = [];
 
-	this.el.innerHTML = template;
-	compiler.$compile(this.el, this);
+	self.$on('SceneSwitch', function(sceneId) {
+		self.el.innerHTML = "";
+		self.childs = self.scenes = [];
+		var template = document.getElementById(sceneId).innerHTML;
+		self.el.innerHTML = template;
+		compiler.$compile(self.el, self);
+	});
+
+	var template = document.getElementById(self.currentView).innerHTML;
+	self.el.innerHTML = template;
+	compiler.$compile(self.el, self);
 }
 
 X.prototype = _.extend(event, {});

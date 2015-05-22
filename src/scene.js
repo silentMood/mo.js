@@ -31,11 +31,6 @@ function Scene(opts) {
 	});
 }
 
-Scene.prototype = _.extend(event, {
-	$goto: function(sceneId) {
-		this.next = sceneId;
-		this.$emit("TriggerAllElementsLeftTransition");
-	},
-});
+Scene.prototype = _.extend(event, {});
 
 module.exports = Scene;
