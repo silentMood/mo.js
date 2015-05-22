@@ -13,10 +13,10 @@ function linkDirectives(el, scene) {
 	for(var i = 0; i < attrs.length; i++) {
 		attr = attrs.item(i);
 		if(attr.nodeName.match(config.prefix)) {
-			scene.dirs.push(new Directive({
+			scene.childs.push(new Directive({
 				dirName: attr.nodeName.replace(config.prefix, ''),
 				expression: attr.value,
-				scene: scene,
+				parent: scene,
 				el: el
 			}));
 		}
@@ -54,8 +54,8 @@ function compileScenes(el, root) {
 	attrs = el.attributes;
 	for(var i = 0; i < attrs.length; i++) {
 		attr = attrs.item(i);
-		scene = new Scene({sceneId: attr.value, root: root, el: el});
-		root.scenes.push(scene);
+		scene = new Scene({sceneId: attr.value, parent: root, el: el});
+		root.childs.push(scene);
 		compileDirectives(el, scene);
 	}
 }

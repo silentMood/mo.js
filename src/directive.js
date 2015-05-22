@@ -21,16 +21,16 @@ function Directive(opts) {
 
 	self = this;
 
-	self.scene = opts.scene;
+	self.parent = opts.scene;
 	self.el = opts.el;
 
 	linkDirective.bind(this)(expression);
 }
 
 Directive.prototype = _.extend(events, {
-	$dispatch: function(eventName) {
-
-
+	$dispatch: function(eventName, info) {
+		this.scene.$emit(eventName, info);
+		this.scene.$dispatch(eventName, info);
 	}
 });
 

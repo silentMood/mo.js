@@ -13,7 +13,7 @@ function X(opts) {
 	}
 
 	this.el = el;
-	this.scenes = [];
+	this.childs = [];
 	compiler.$compile(this.el, this);
 }
 
