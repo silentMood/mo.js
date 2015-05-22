@@ -8,35 +8,35 @@ LeftTransMap = {};
 AnimationController = function(expression) {
   var self = this;
   //trigger all the animation event
-  function triggerTransition(transitionMap, cb) {
-    var keys = Object.keys(transitionMap).sort();
-    if (!keys.length) return cb();
-
-    var forced = false;
-    var timeout = setTimeout(function() {
-      forced = true && cb();
-    }, config.forceEndTime);
-
-    var idx = 0;
-    function go(key) {
-      //end design
+  var triggerTransition = function(transitionMap, cb) {
+    var forced, go, idx, keys, timeout;
+    keys = Object.keys(transitionMap).sort();
+    if (!keys.length) {
+      return cb();
+    }
+    forced = false;
+    timeout = setTimeout(function() {
+      forced = true;
+      return cb();
+    }, 500);
+    idx = 0;
+    go = function(key) {
+      var transitionendNums;
       if (idx > keys.length) {
-        if (forced) return;
+        if (forced) {
+          return;
+        }
         clearTimeout(timeout);
         return cb();
       }
-
-      var transitionendNums = 0;
-      transitionMap[key].forEach(function(elem) {
+      transitionendNums = 0;
+      return transitionMap[key].forEach(function(elem) {
         var called, handleEvent;
         setTimeout(function() {
-          _.addClass(elem.el, elem.transEffect);
+          return _.addClass(elem.el, elem.transEffect);
         }, 0);
-        
-        cb = function() {
-          if (called) return;
-          called = true;
-
+        called = false;
+        handleEvent = function() {
           transitionendNums++;
           if (transitionendNums === transitionMap[key].length) {
             if (idx <= keys.length) {
@@ -44,17 +44,24 @@ AnimationController = function(expression) {
             }
           }
         };
-
-        var called = false;
-        setTimeout(cb, config.forceEndTime);
-
-        elem.el.addEventListener("transitionend", function(e) {
+        setTimeout(function() {
+          if (called) {
+            return;
+          }
+          called = true;
+          return handleEvent();
+        }, 500);
+        return elem.el.addEventListener("transitionend", function(e) {
+          if (called) {
+            return;
+          }
+          called = true;
           e.stopPropagation();
-          cb();
+          return handleEvent();
         });
       });
     };
-    go(keys[idx++]);
+    return go(keys[idx++]);
   };
 
   self.$on("TriggerAllElementsEnterTransition", function() {

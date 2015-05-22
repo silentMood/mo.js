@@ -5,6 +5,8 @@ function go(expression) {
 	var self = this;
 	
 	self.parent.$on("AllElementsLeftTransitionEnd", function() {
+		self.parent.$broadcast('ClearAllElementsEnterTransition');
+		self.parent.$broadcast('ClearAllElementsLeftTransition');
 		self.$dispatch('SceneSwitch', expression);
 	});
 
