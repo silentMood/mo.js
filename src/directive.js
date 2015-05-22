@@ -4,12 +4,12 @@ var event = require('./event');
 var directives = require('./directives/index');
 
 function linkDirective(expression) {
-	Dir = directives[dirname];
+	Dir = directives[this.dirName];
 	if(Dir) {
-		Dir(expression);
+		Dir.bind(this)(expression);
 	}
 	else {
-		var err = new Error('can not recognise' + dirname + 'directive');
+		var err = new Error('can not recognise' + this.dirName + 'directive');
 		throw err;
 	}
 }
@@ -21,17 +21,14 @@ function Directive(opts) {
 
 	self = this;
 
-	self.parent = opts.scene;
+	self.dirName = opts.dirName;
 	self.el = opts.el;
+	self.parent = opts.scene;
+	self.expression = opts.expression;
 
-	linkDirective.bind(this)(expression);
+	linkDirective.bind(this)(self.expression);
 }
 
-Directive.prototype = _.extend(events, {
-	$dispatch: function(eventName, info) {
-		this.scene.$emit(eventName, info);
-		this.scene.$dispatch(eventName, info);
-	}
-});
+Directive.prototype = _.extend(event, {});
 
 module.exports = Directive;

@@ -21,10 +21,10 @@ function linkDirectives(el, scene) {
 	for(var i = 0; i < attrs.length; i++) {
 		attr = attrs.item(i);
 		if(attr.nodeName.match(config.prefix)) {
-			scene.dirs.push(new Directive({
+			scene.childs.push(new Directive({
 				dirName: attr.nodeName.replace(config.prefix, ''),
 				expression: attr.value,
-				scene: scene,
+				parent: scene,
 				el: el
 			}));
 		}
@@ -62,8 +62,8 @@ function compileScenes(el, root) {
 	attrs = el.attributes;
 	for(var i = 0; i < attrs.length; i++) {
 		attr = attrs.item(i);
-		scene = new Scene({sceneId: attr.value, root: root, el: el});
-		root.scenes.push(scene);
+		scene = new Scene({sceneId: attr.value, parent: root, el: el});
+		root.childs.push(scene);
 		compileDirectives(el, scene);
 	}
 }
@@ -92,12 +92,12 @@ var event = require('./event');
 var directives = require('./directives/index');
 
 function linkDirective(expression) {
-	Dir = directives[dirname];
+	Dir = directives[this.dirName];
 	if(Dir) {
-		Dir(expression);
+		Dir.bind(this)(expression);
 	}
 	else {
-		var err = new Error('can not recognise' + dirname + 'directive');
+		var err = new Error('can not recognise' + this.dirName + 'directive');
 		throw err;
 	}
 }
@@ -109,18 +109,15 @@ function Directive(opts) {
 
 	self = this;
 
-	self.scene = opts.scene;
+	self.dirName = opts.dirName;
 	self.el = opts.el;
+	self.parent = opts.scene;
+	self.expression = opts.expression;
 
-	linkDirective.bind(this)(expression);
+	linkDirective.bind(this)(self.expression);
 }
 
-Directive.prototype = _.extend(events, {
-	$dispatch: function(eventName) {
-
-
-	}
-});
+Directive.prototype = _.extend(event, {});
 
 module.exports = Directive;
 },{"./config":3,"./directives/index":5,"./event":8,"./utils":11}],5:[function(require,module,exports){
@@ -270,12 +267,28 @@ module.exports = {
 		}
 		this.events[event].push(fn.bind(context));
 	},
-	$emit: function(event) {
+	$emit: function(event, info) {
 		fns = this.events[event];
 		if (fns && fns instanceof Array) {
 			fns.forEach(function(fn, idx) {
-				fn();
+				fn(info);
 			});
+		}
+	},
+	$dispatch: function(event, info) {
+		var parent = null;
+		var scope = this;
+		while(parent = scope.parent) {
+			parent.$emit(event, info);
+		}
+	},
+	$broadcast: function(event, info) {
+		var childs = null;
+		var scope = this;
+		while(childs = scope.childs) {
+			for(var i = 0; i < childs.length; i++) {
+				childs[i].$emit(event, info);
+			}
 		}
 	}
 }
@@ -295,14 +308,17 @@ function generateSceneId() {
 function Scene(opts) {
 	self = this;
 	self.id = opts.sceneId ? opts.sceneId : generateSceneId();
+	self.parent = opts.root;
 	self.el = opts.el;
 
-	self.dirs = [];
+	self.childs = [];
 	self.next = null;
 
 	self.states = {
 		canLeft: false
 	};
+
+	self.$emit('TriggerAllElementsEnterTransition');
 
 	self.$on('AllElementsEnterTransitionEnd', function() {
 		self.states.canLeft = true;
@@ -362,7 +378,7 @@ function X(opts) {
 	}
 
 	this.el = el;
-	this.scenes = [];
+	this.childs = [];
 	compiler.$compile(this.el, this);
 }
 

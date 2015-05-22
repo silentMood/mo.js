@@ -19,6 +19,8 @@ function Scene(opts) {
 		canLeft: false
 	};
 
+	self.$emit('TriggerAllElementsEnterTransition');
+
 	self.$on('AllElementsEnterTransitionEnd', function() {
 		self.states.canLeft = true;
 	});
