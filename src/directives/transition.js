@@ -9,49 +9,33 @@ AnimationController = function(expression) {
   var self = this;
   //trigger all the animation event
   var triggerTransition = function(transitionMap, cb) {
-    var forced, go, idx, keys, timeout;
-    keys = Object.keys(transitionMap).sort();
-    if (!keys.length) {
-      return cb();
-    }
-    forced = false;
-    timeout = setTimeout(function() {
-      forced = true;
-      return cb();
-    }, 500);
-    idx = 0;
-    go = function(key) {
-      var transitionendNums;
-      if (idx > keys.length) {
-        if (forced) {
-          return;
-        }
-        clearTimeout(timeout);
-        return cb();
-      }
-      transitionendNums = 0;
-      return transitionMap[key].forEach(function(elem) {
-        var called, handleEvent;
+    var keys = Object.keys(transitionMap).sort();
+    if (!keys.length) return cb();
+    var idx = 0;
+    function go(key) {
+      if (idx > keys.length) return cb();
+      var transitionendNums = 0;
+      transitionMap[key].forEach(function(elem) {
         setTimeout(function() {
           return _.addClass(elem.el, elem.transEffect);
         }, 0);
-        called = false;
-        handleEvent = function() {
+        var handleEvent = function() {
           transitionendNums++;
           if (transitionendNums === transitionMap[key].length) {
-            if (idx <= keys.length) {
-              return go(keys[idx++]);
-            }
+            if (idx <= keys.length) go(keys[idx++]);
           }
         };
+
+        var called = false;
         setTimeout(function() {
           if (called) {
             return;
           }
           called = true;
-          return handleEvent();
+          handleEvent();
         }, 500);
-        return elem.el.addEventListener("transitionend", function(e) {
+
+        elem.el.addEventListener("transitionend", function(e) {
           if (called) {
             return;
           }
