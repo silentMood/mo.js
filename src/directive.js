@@ -9,7 +9,7 @@ function linkDirective(expression) {
 		Dir.bind(this)(expression);
 	}
 	else {
-		var err = new Error('can not recognise' + this.dirName + 'directive');
+		var err = new Error('can not recognise ' + this.dirName + ' directive');
 		throw err;
 	}
 }
