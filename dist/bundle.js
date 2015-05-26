@@ -56,21 +56,6 @@ function compileDirectives(el, scene) {
 	scene.$emit('EndRegisterDirectives');
 }
 
-// function compileScenes(el, root) {
-// 	assert(el !== null);
-
-// 	attrs = el.attributes;
-// 	for(var i = 0; i < attrs.length; i++) {
-// 		attr = attrs.item(i);
-// 		scene = new Scene({sceneId: attr.value, el: el});
-// 		//confirm the relationship
-// 		root.childs.push(scene);
-// 		scene.parent = root;
-
-// 		compileDirectives(el, scene);
-// 	}
-// }
-
 function compile(el, root) {
 	assert(el !== null);
 	//first need to be refactored
@@ -99,7 +84,7 @@ function linkDirective(expression) {
 		Dir.bind(this)(expression);
 	}
 	else {
-		var err = new Error('can not recognise' + this.dirName + 'directive');
+		var err = new Error('can not recognise ' + this.dirName + ' directive');
 		throw err;
 	}
 }
