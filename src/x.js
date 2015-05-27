@@ -62,7 +62,7 @@ X.prototype = _.extend(event, {
 		self.currentScene = scene;
 
 		//redirect thing
-		self.$on('hook:left', function() {
+		self.$on('hook:goto', function() {
 			self.$mount();
 		});
 		self.$unmount();

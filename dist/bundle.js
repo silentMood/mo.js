@@ -84,7 +84,7 @@ function compile(el, root) {
 module.exports = {
 	$compile: compile
 };
-},{"./assert":1,"./config":3,"./directive":4,"./scene":10,"./utils":11}],3:[function(require,module,exports){
+},{"./assert":1,"./config":3,"./directive":4,"./scene":11,"./utils":12}],3:[function(require,module,exports){
 module.exports = {
 	prefix: 'd-',
 	forceEndTime: 500,
@@ -127,7 +127,7 @@ function Directive(opts) {
 Directive.prototype = _.extend(event, {});
 
 module.exports = Directive;
-},{"./directives/index":6,"./event":8,"./utils":11}],5:[function(require,module,exports){
+},{"./directives/index":6,"./event":8,"./utils":12}],5:[function(require,module,exports){
 var config = require('../config');
 var _ = require('../utils');
 
@@ -155,13 +155,13 @@ go = {
 module.exports = {
   go: go
 }
-},{"../config":3,"../utils":11}],6:[function(require,module,exports){
+},{"../config":3,"../utils":12}],6:[function(require,module,exports){
 var transition = require('./transition');
 var go = require('./goto');
 var _ = require('../utils');
 
 module.exports = _.extend(transition, go);
-},{"../utils":11,"./goto":5,"./transition":7}],7:[function(require,module,exports){
+},{"../utils":12,"./goto":5,"./transition":7}],7:[function(require,module,exports){
 var config = require('../config');
 var _ = require('../utils');
 
@@ -286,7 +286,7 @@ module.exports = {
   leftanimation: LeftAnimation,
   animationcontroller: AnimationController
 }
-},{"../config":3,"../utils":11}],8:[function(require,module,exports){
+},{"../config":3,"../utils":12}],8:[function(require,module,exports){
 assert = require('./assert');
 
 module.exports = {
@@ -360,36 +360,10 @@ module.exports = {
 var X = require('./x');
 
 window.X = X;
-},{"./x":12}],10:[function(require,module,exports){
-var _ = require('./utils');
-var event = require('./event');
-var config = require('./config');
-
-var baseId = 0;
-function generateSceneId() {
-	return baseId++;
-}
-
-function Scene(opts) {
-	var self = this;
-	//all the events
-	self.events = {};
-	//all the dirs
-	self.childs = self.dirs = [];
-	//sceneId
-	self.id = opts.sceneId ? opts.sceneId : generateSceneId();
-	//all the link and unlink fns
-	self.fns = [];
-	self.ufns = [];
-
-	//el
-	var el = document.createElement('div');
-	el.innerHTML = opts.el.innerHTML;
-	self.el = el;
-}
-
-//core life cycle
-Scene.prototype = _.extend(event, {
+},{"./x":13}],10:[function(require,module,exports){
+//life cycle control
+//this means the scene
+module.exports = {
 	_status: 0,
 	$pushStatus: function(err) {
 		if(err) {
@@ -414,8 +388,7 @@ Scene.prototype = _.extend(event, {
 				this.$emit('hook:left', next);
 				break;
 			case 6:
-				//when end then reset status
-				this._status = 0;
+				this.$emit('hook:goto');
 				break;
 		}
 	},
@@ -423,6 +396,7 @@ Scene.prototype = _.extend(event, {
 		var self = this;
 
 		self.$on('hook:prepare', function(next) {
+			self.parent.container.appendChild(self.el);
 			self.$link()
 			next();
 		});
@@ -452,6 +426,8 @@ Scene.prototype = _.extend(event, {
 
 		self.$on('hook:left', function(next) {
 			self.$unlink();
+			self.parent.container.removeChilds();
+			this._status = 0;
 			next();
 		});
 
@@ -467,10 +443,41 @@ Scene.prototype = _.extend(event, {
 			this.ufns[idx]();
 		}
 	}
-});
+}
+},{}],11:[function(require,module,exports){
+var _ = require('./utils');
+var event = require('./event');
+var lifecycle = require('./lifecycle');
+var config = require('./config');
+
+var baseId = 0;
+function generateSceneId() {
+	return baseId++;
+}
+
+function Scene(opts) {
+	var self = this;
+	//all the events
+	self.events = {};
+	//all the dirs
+	self.childs = self.dirs = [];
+	//sceneId
+	self.id = opts.sceneId ? opts.sceneId : generateSceneId();
+	//all the link and unlink fns
+	self.fns = [];
+	self.ufns = [];
+
+	//el
+	var el = document.createElement('div');
+	el.innerHTML = opts.el.innerHTML;
+	self.el = el;
+}
+
+//core life cycle
+Scene.prototype = _.extend(event, lifecycle);
 
 module.exports = Scene;
-},{"./config":3,"./event":8,"./utils":11}],11:[function(require,module,exports){
+},{"./config":3,"./event":8,"./lifecycle":10,"./utils":12}],12:[function(require,module,exports){
 module.exports = {
 	extend: function(s, ss) {
 		var res = {};
@@ -514,7 +521,7 @@ module.exports = {
 		}
 	}
 }
-},{}],12:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 var assert = require('./assert');
 var _ = require('./utils');
 var event = require('./event');
@@ -579,7 +586,7 @@ X.prototype = _.extend(event, {
 		self.currentScene = scene;
 
 		//redirect thing
-		self.$on('hook:left', function() {
+		self.$on('hook:goto', function() {
 			self.$mount();
 		});
 		self.$unmount();
@@ -587,4 +594,4 @@ X.prototype = _.extend(event, {
 });
 
 module.exports = X;
-},{"./assert":1,"./compile":2,"./event":8,"./utils":11}]},{},[9])
+},{"./assert":1,"./compile":2,"./event":8,"./utils":12}]},{},[9])
