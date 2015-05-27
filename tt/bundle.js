@@ -10,33 +10,37 @@ var config = require('./config');
 var assert = require('./assert');
 var Scene = require('./scene');
 var Directive = require('./directive');
+var _ = require('./utils');
 
 var sceneIdentifier = 'scene';
 
 function linkDirectives(el, scene) {
-	assert(el !== null);
 	assert(scene !== null);
 
 	var attrs = el.attributes;
 	for(var i = 0; i < attrs.length; i++) {
 		attr = attrs.item(i);
 		if(attr.nodeName.match(config.prefix)) {
-			dir = new Directive({
+			var dir = new Directive({
 				dirName: attr.nodeName.replace(config.prefix, ''),
 				expression: attr.value,
 				scene: scene,
 				el: el
 			});
+			//set app data structure
+			scene.childs.push(dir);
+			dir.parent = scene;
+			//set the link fns
+			scene.fns.push(dir.bind.bind(dir));
+			scene.ufns.push(dir.unbind.bind(dir));
 		}
 	}
 }
 
-function compileDirectives(el, scene) {
-	assert(el !== null);
+function compileDirectives(scene) {
 	assert(scene !== null);
 
-	scene.$emit('BeginRegisterDirectives');
-	var $nodes = [el];
+	var $nodes = [scene.el];
 	while($nodes.length) {
 		$el = $nodes[0];
 		linkDirectives($el, scene);
@@ -53,79 +57,99 @@ function compileDirectives(el, scene) {
 		}
 		$nodes.shift();
 	}
-	scene.$emit('EndRegisterDirectives');
 }
 
 function compile(el, root) {
 	assert(el !== null);
-	//first need to be refactored
-	var scene = new Scene({sceneId: attr.value, el: el, root: root});
+	//compile all the things
+	var els = document.querySelectorAll('script[scene]');
 
-	compileDirectives(el, scene);
+	for(var idx = 0; idx < els.length; idx++) {
+		var el = els[idx];
+		var sceneId = _.getAttrValByName(el, 'scene');
+		if(root.childs[sceneId]) {
+			//warning
+			console.log('can not set the same scene id');
+			//then ignore this scene
+			continue;
+		}
+		//set app data structure
+		root.childs[sceneId] = new Scene({el: el, root: root});
+		root.childs[sceneId].parent = root;
+		//start compile the scene function
+		compileDirectives(root.childs[sceneId]);
+	}
 }
 
 module.exports = {
 	$compile: compile
 };
-},{"./assert":1,"./config":3,"./directive":4,"./scene":10}],3:[function(require,module,exports){
+},{"./assert":1,"./config":3,"./directive":4,"./scene":10,"./utils":11}],3:[function(require,module,exports){
 module.exports = {
 	prefix: 'd-',
-	forceEndTime: 500
+	forceEndTime: 500,
+	scenePrefix: 'scene'
 };
 },{}],4:[function(require,module,exports){
 var _ = require('./utils');
-var config = require('./config');
 var event = require('./event');
 var directives = require('./directives/index');
-
-function linkDirective(expression) {
-	var Dir = directives[this.dirName];
-	if(Dir) {
-		Dir.bind(this)(expression);
-	}
-	else {
-		var err = new Error('can not recognise ' + this.dirName + ' directive');
-		throw err;
-	}
-}
 
 function Directive(opts) {
 	assert(opts.expression !== null);
 	assert(opts.scene !== null);
-	assert(opts.el !== null);
 
-	var self = this;
-	self.events = {};
+	//events container
+	this.events = {};
 
-	self.dirName = opts.dirName;
-	self.el = opts.el;
-	self.expression = opts.expression;
-	self.childs = [];
-	self.parent = opts.scene;
-	self.parent.childs.push(self);
+	//directive name
+	this.dirName = opts.dirName;
+	//directive el
+	this.el = opts.el;
+	//directive expression
+	this.expression = opts.expression;
 
-	linkDirective.bind(this)(self.expression);
+	//get the link fn and unlink fn
+	var dir = directives[this.dirName];
+	if(!dir) {
+		console.log('can not recognise ' + this.dirName + 'directive');
+		this.bind = function(){};
+		this.unbind = function(){};
+	}
+	else {
+		assert(dir.bind !== null);
+		assert(dir.unbind !== null);
+
+		_.mixin(this, dir);
+	}
 }
 
 Directive.prototype = _.extend(event, {});
 
 module.exports = Directive;
-},{"./config":3,"./directives/index":6,"./event":8,"./utils":11}],5:[function(require,module,exports){
+},{"./directives/index":6,"./event":8,"./utils":11}],5:[function(require,module,exports){
 var config = require('../config');
 var _ = require('../utils');
 
-function go(expression) {
-	var self = this;
-	
-	self.parent.$on("AllElementsLeftTransitionEnd", function() {
-		self.parent.$broadcast('ClearAllElementsEnterTransition');
-		self.parent.$broadcast('ClearAllElementsLeftTransition');
-		self.$dispatch('SceneSwitch', expression);
-	});
+go = {
+	// handleClick: function() {
+	// 	self.parent.$broadcast("TriggerAllElementsLeftTransition");
+	// },
+	bind: function(expression) {
+		// var self = this;
+		// //need refactor
+		// self.parent.$on("AllElementsLeftTransitionEnd", function() {
+		// 	self.parent.$broadcast('ClearAllElementsEnterTransition');
+		// 	self.parent.$broadcast('ClearAllElementsLeftTransition');
+		// 	self.$dispatch('SceneSwitch', expression);
+		// });
 
-	self.el.addEventListener('click', function(){
-		self.parent.$broadcast("TriggerAllElementsLeftTransition");	
-	});
+		// self.el.addEventListener('click', self.handleClick);
+	},
+	unbind: function() {
+		// this.el.removeEventListener('click', this.handleClick);
+		// this.parent.$off('AllElementsLeftTransitionEnd');
+	}
 }
 
 module.exports = {
@@ -134,20 +158,30 @@ module.exports = {
 },{"../config":3,"../utils":11}],6:[function(require,module,exports){
 var transition = require('./transition');
 var go = require('./goto');
+var _ = require('../utils');
 
 module.exports = _.extend(transition, go);
-},{"./goto":5,"./transition":7}],7:[function(require,module,exports){
+},{"../utils":11,"./goto":5,"./transition":7}],7:[function(require,module,exports){
 var config = require('../config');
 var _ = require('../utils');
 
-EnterTransMap = {};
+var EnterTransMap = {};
+var LeftTransMap = {};
 
-LeftTransMap = {};
+AnimationController = {
+  handleReady: function(next) {
+    var self = this;
 
-AnimationController = function(expression) {
-  var self = this;
-  //trigger all the animation event
-  var triggerTransition = function(transitionMap, cb) {
+    self.triggerTransition(EnterTransMap, next);
+  },
+  handleHold: function(next) {
+    var self = this;
+
+    self.triggerTransition(LeftTransMap, next);
+  },
+  triggerTransition: function(transitionMap, cb) {
+    var self = this;
+
     var keys = Object.keys(transitionMap).sort();
     if (!keys.length) return cb();
     var idx = 0;
@@ -174,7 +208,10 @@ AnimationController = function(expression) {
           handleEvent();
         }, 500);
 
-        elem.el.addEventListener("transitionend", function(e) {
+        elem.el.addEventListener('transitionend', function(e) {
+          //once
+          elem.el.removeEventListener('transitionend', arguments.callee);
+
           if (called) {
             return;
           }
@@ -185,50 +222,63 @@ AnimationController = function(expression) {
       });
     };
     return go(keys[idx++]);
-  };
-
-  self.$on("TriggerAllElementsEnterTransition", function() {
-    triggerTransition(EnterTransMap, function() {
-      return self.$dispatch("AllElementsEnterTransitionEnd");
-    });
-  });
-  self.$on("TriggerAllElementsLeftTransition", function() {
-    triggerTransition(LeftTransMap, function() {
-      return self.$dispatch("AllElementsLeftTransitionEnd");
-    });
-  });
-  self.$on("ClearAllElementsEnterTransition", function() {
-    return EnterTransMap = {};
-  });
-  self.$on("ClearAllElementsLeftTransition", function() {
-    return LeftTransMap = {};
-  });
+  },
+  //inject the arguments
+  bind: function(expression) {
+    //when ready then trigger enter animation
+    this.parent.$on('hook:readyForDirBehaviour', this.handleReady.bind(this));
+    //when hold then trigger left animation
+    this.parent.$on('hook:holdForDirBehaviour', this.handleHold.bind(this));
+  },
+  unbind: function() {
+    self.$off('hook:readyForDirBehaviour', this.handleReady);
+    self.$off('hook:holdForDirBehaviour', this.handleHold);
+    //reset the map
+    EnterTransMap = {};
+    LeftTransMap = {};
+  }
 }
 
-EnterAnimation = function(expression) {
-  var priority, transEffect;
-  priority = expression.split("/")[0];
-  transEffect = expression.split("/")[1];
-  if (!EnterTransMap[priority]) {
-    EnterTransMap[priority] = [];
+EnterAnimation = {
+  bind: function() {
+    var priority, transEffect;
+    var expression = this.expression;
+
+    priority = expression.split("/")[0];
+    transEffect = expression.split("/")[1];
+    if (!EnterTransMap[priority]) {
+      EnterTransMap[priority] = [];
+    }
+    EnterTransMap[priority].push({
+      el: this.el,
+      transEffect: transEffect
+    });
+  },
+  unbind: function() {
+    //reset the map
+    EnterTransMap = {};
   }
-  EnterTransMap[priority].push({
-    el: this.el,
-    transEffect: transEffect
-  });
 }
 
-LeftAnimation = function(expression) {
-  var priority, transEffect;
-  priority = expression.split("/")[0];
-  transEffect = expression.split("/")[1];
-  if (!LeftTransMap[priority]) {
-    LeftTransMap[priority] = [];
+LeftAnimation = {
+  bind: function() {
+    var priority, transEffect;
+    var expression = this.expression;
+
+    priority = expression.split("/")[0];
+    transEffect = expression.split("/")[1];
+    if (!LeftTransMap[priority]) {
+      LeftTransMap[priority] = [];
+    }
+    LeftTransMap[priority].push({
+      el: this.el,
+      transEffect: transEffect
+    });
+  },
+  unbind: function() {
+    //reset the map
+    LeftTransMap = {};
   }
-  LeftTransMap[priority].push({
-    el: this.el,
-    transEffect: transEffect
-  });
 }
 
 module.exports = {
@@ -240,41 +290,66 @@ module.exports = {
 assert = require('./assert');
 
 module.exports = {
-	$on: function(event, fn, context) {
-		assert(typeof event === 'string');
+	$on: function(eventName, fn) {
+		assert(typeof eventName === 'string');
 		assert(typeof fn === 'function');
 
+		//make sure do have the events
 		if(!this.events) {
 			this.events = {};
 		}
-		if(!this.events[event]) {
-			this.events[event] = [];
+		//make sure do have the event queue
+		if(!this.events[eventName]) {
+			this.events[eventName] = [];
 		}
-		this.events[event].push(fn.bind(context));
+
+		for(var idx = 0; idx < this.events[eventName].length; idx++) {
+			if(fn === this.events[eventName][idx]) {
+				//warn
+				return console.log('same fn should only bind once');
+			}
+		}
+		this.events[eventName].push(fn);
 	},
-	$emit: function(event, info) {
-		var fns = this.events[event];
+	$off: function(eventName, fn) {
+		assert(typeof eventName === 'string');
+
+		if(!!fn) {
+			for(var idx = 0; idx < this.events[eventName].length; idx++) {
+				if(fn === this.events[eventName][idx]) {
+					//remove the bind fn
+					this.events[eventName].splice(idx, idx + 1);
+					break;
+				}
+			}
+		} else {
+			//remove all the fn
+			this.events[eventName] = []
+		}
+	},
+	$emit: function(eventName, info) {
+		var fns = this.events[eventName];
 		if (fns && fns instanceof Array) {
 			fns.forEach(function(fn, idx) {
 				fn(info);
 			});
 		}
 	},
-	$dispatch: function(event, info) {
+	$dispatch: function(eventName, info) {
 		var parent = null;
 		var scope = this;
 		while(parent = scope.parent) {
 			scope = parent;
-			scope.$emit(event, info);
+			scope.$emit(eventName, info);
 		}
 	},
-	$broadcast: function(event, info) {
+	$broadcast: function(eventName, info) {
 		var scopes = [this];
 		while(scopes.length) {
 			var scope = scopes[0];
 			var childs = scope.childs
 			for(var i = 0; i < childs.length; i++) {
-				childs[i].$emit(event, info);
+				childs[i].$emit(eventName, info);
 				scopes.push(childs[i]);
 			}
 			scopes.shift();
@@ -286,8 +361,9 @@ var X = require('./x');
 
 window.X = X;
 },{"./x":12}],10:[function(require,module,exports){
-_ = require('./utils');
-event = require('./event');
+var _ = require('./utils');
+var event = require('./event');
+var config = require('./config');
 
 var baseId = 0;
 function generateSceneId() {
@@ -296,31 +372,105 @@ function generateSceneId() {
 
 function Scene(opts) {
 	var self = this;
-	self.id = opts.sceneId ? opts.sceneId : generateSceneId();
-	self.el = opts.el;
+	//all the events
 	self.events = {};
-
+	//all the dirs
 	self.childs = self.dirs = [];
-	self.parent = opts.root;
-	self.parent.childs.push(self);
+	//sceneId
+	self.id = opts.sceneId ? opts.sceneId : generateSceneId();
+	//all the link and unlink fns
+	self.fns = [];
+	self.ufns = [];
 
-	self.states = {
-		canLeft: false
-	};
-
-	self.$on('EndRegisterDirectives', function() {
-		self.$broadcast('TriggerAllElementsEnterTransition');
-	});
-
-	self.$on('AllElementsEnterTransitionEnd', function() {
-		self.states.canLeft = true;
-	});
+	//el
+	var el = document.createElement('div');
+	el.innerHTML = opts.el.innerHTML;
+	self.el = el;
 }
 
-Scene.prototype = _.extend(event, {});
+//core life cycle
+Scene.prototype = _.extend(event, {
+	_status: 0,
+	$pushStatus: function(err) {
+		if(err) {
+			return console.log(err);
+		}
+		var next = arguments.callee.bind(this);
+		this._status++;
+		switch(this._status) {
+			case 1:
+				this.$emit('hook:prepare', next);
+				break;
+			case 2:
+				this.$emit('hook:ready', next);
+				break;
+			case 3:
+				this.$emit('hook:go');
+				break;
+			case 4:
+				this.$emit('hook:hold', next);
+				break;
+			case 5:
+				this.$emit('hook:left', next);
+				break;
+			case 6:
+				//when end then reset status
+				this._status = 0;
+				break;
+		}
+	},
+	$init: function() {
+		var self = this;
+
+		self.$on('hook:prepare', function(next) {
+			self.$link()
+			next();
+		});
+
+		self.$on('hook:ready', function(next){
+			var from = 0;
+			var eventName = 'hook:readyForDirBehaviour'
+			var to = self.events[eventName].length;
+			var cb = function() {
+				from++;
+				if(from === to) next();
+			}
+			self.$emit(eventName, cb);
+		});
+
+		self.$on('hook:hold', function(next) {
+			var from = 0;
+			var eventName = 'hook:holdForDirBehaviour'
+			var to = self.events[eventName].length;
+			var cb = function() {
+				from++;
+				if(from === to) next();
+			}
+			self.$emit(eventName, cb);
+			next();
+		});
+
+		self.$on('hook:left', function(next) {
+			self.$unlink();
+			next();
+		});
+
+		self._isInit = true;
+	},
+	$link: function() {
+		for(var idx = 0; idx < this.fns.length; idx++) {
+			this.fns[idx]();
+		}
+	},
+	$unlink: function() {
+		for(var idx = 0; idx < this.ufns.length; idx++) {
+			this.ufns[idx]();
+		}
+	}
+});
 
 module.exports = Scene;
-},{"./event":8,"./utils":11}],11:[function(require,module,exports){
+},{"./config":3,"./event":8,"./utils":11}],11:[function(require,module,exports){
 module.exports = {
 	extend: function(s, ss) {
 		var res = {};
@@ -343,6 +493,25 @@ module.exports = {
 	    var reg = new RegExp('(\\s|^)'+className+'(\\s|$)');
 	    el.className=el.className.replace(reg,' ');
 	  }
+	},
+	getAttrValByName: function(el, attrName) {
+		var attrs = el.attributes;
+		for(var i = 0; i < attrs.length; i++) {
+			var attr = attrs.item(i);
+			if(attr.nodeName.match(attrName)) {
+				return attr.value;
+			}
+		}
+	},
+	mixin: function(target, source) {
+		keys = Object.keys(source);
+		for(var idx = 0; idx < keys.length; idx++) {
+			var key = keys[idx];
+			if(target[key]) {
+				continue;
+			}
+			target[key] = source[key];
+		}
 	}
 }
 },{}],12:[function(require,module,exports){
@@ -353,44 +522,69 @@ var compiler = require('./compile');
 
 function X(opts) {
 	var self = this;
+	//events
 	self.events = {};
+	//create app data structure
+	self.childs = self.scenes = {};
 
-	var el = null;
+	//set total container
 	if(opts && opts.elId) {
-		el = document.querySelector('#' + opts.elId);
+		self.container = document.querySelector('#' + opts.elId);
 	}
 	else {
-		el = document.body;
+		self.container = document.body;
 	}
 
-	var attrs = el.attributes;
+	//compile all the scenes
+	compiler.$compile(self.container, self);
+
+	//set the main interface
+	var attrs = self.container.attributes;
 	for(var i = 0; i < attrs.length; i ++) {
 		attr = attrs.item(i);
-		if(attr.nodeName.match(/mainScene/i)) {
-			self.currentView = attr.value;
+		if(attr.nodeName.match(/main/i)) {
+			self.currentScene = self.scenes[attr.value];
+			break;
 		}
 	}
-	if(!self.currentView) {
-		self.currentView = 'scene1';
+	if(!self.currentScene) {
+		//error
+		return console.log('have not set the main interface yet');
 	}
 
-	self.el = el;
-	self.childs = self.scenes = [];
-
-	self.$on('SceneSwitch', function(sceneId) {
-		self.el.innerHTML = "";
-		self.childs = self.scenes = [];
-		var template = document.getElementById(sceneId).innerHTML;
-		self.el.innerHTML = template;
-		compiler.$compile(self.el, self);
-	});
-
-	var template = document.getElementById(self.currentView).innerHTML;
-	self.el.innerHTML = template;
-	compiler.$compile(self.el, self);
+	//start the scene life cycle
+	self.$mount();
 }
 
-X.prototype = _.extend(event, {});
+//spread from this
+X.prototype = _.extend(event, {
+	$mount: function() {
+		assert(this.currentScene._status === 0);
+		if(!this.currentScene._isInit) {
+			this.currentScene.$init();
+		}
+		
+		//life cycle
+		this.currentScene.$pushStatus();
+	},
+	$unmount: function() {
+		//life cycle
+		this.currentScene.$pushStatus();
+	},
+	redirectTo: function(sceneId) {
+		var self = this;
+		var scene = self.scenes[sceneId];
+		assert(scene !== null);
+
+		self.currentScene = scene;
+
+		//redirect thing
+		self.$on('hook:left', function() {
+			self.$mount();
+		});
+		self.$unmount();
+	}
+});
 
 module.exports = X;
 },{"./assert":1,"./compile":2,"./event":8,"./utils":11}]},{},[9])

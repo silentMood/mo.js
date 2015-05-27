@@ -23,10 +23,10 @@
 </style>
 </head>
 <body>
-<div id="app" mainScene="scene1">
+<div id="app" main="scene1">
 </div>
 
-<script type="text/template" id="scene1">
+<script type="text/template" scene="scene1">
 	<div class="scene" d-AnimationController="" d-EnterAnimation="0/fade-enter" d-go="scene2">
 		<p d-EnterAnimation="1/fade-enter" d-LeftAnimation="5/fade-left">scene1</p>
 		<p d-EnterAnimation="2/fade-enter" d-LeftAnimation="4/fade-left">scene2</p>
@@ -36,7 +36,7 @@
 	</div>
 </script>
 
-<script type="text/template" id="scene2">
+<script type="text/template" scene="scene2">
 	<div class="scene" d-AnimationController="" d-EnterAnimation="0/fade-enter" d-go="scene1">
 		<p d-EnterAnimation="1/fade-enter" d-LeftAnimation="5/fade-left">scene6</p>
 		<p d-EnterAnimation="2/fade-enter" d-LeftAnimation="4/fade-left">scene7</p>

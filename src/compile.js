@@ -2,33 +2,37 @@ var config = require('./config');
 var assert = require('./assert');
 var Scene = require('./scene');
 var Directive = require('./directive');
+var _ = require('./utils');
 
 var sceneIdentifier = 'scene';
 
 function linkDirectives(el, scene) {
-	assert(el !== null);
 	assert(scene !== null);
 
 	var attrs = el.attributes;
 	for(var i = 0; i < attrs.length; i++) {
 		attr = attrs.item(i);
 		if(attr.nodeName.match(config.prefix)) {
-			dir = new Directive({
+			var dir = new Directive({
 				dirName: attr.nodeName.replace(config.prefix, ''),
 				expression: attr.value,
 				scene: scene,
 				el: el
 			});
+			//set app data structure
+			scene.childs.push(dir);
+			dir.parent = scene;
+			//set the link fns
+			scene.fns.push(dir.bind.bind(dir));
+			scene.ufns.push(dir.unbind.bind(dir));
 		}
 	}
 }
 
-function compileDirectives(el, scene) {
-	assert(el !== null);
+function compileDirectives(scene) {
 	assert(scene !== null);
 
-	scene.$emit('BeginRegisterDirectives');
-	var $nodes = [el];
+	var $nodes = [scene.el];
 	while($nodes.length) {
 		$el = $nodes[0];
 		linkDirectives($el, scene);
@@ -45,15 +49,28 @@ function compileDirectives(el, scene) {
 		}
 		$nodes.shift();
 	}
-	scene.$emit('EndRegisterDirectives');
 }
 
 function compile(el, root) {
 	assert(el !== null);
-	//first need to be refactored
-	var scene = new Scene({sceneId: attr.value, el: el, root: root});
+	//compile all the things
+	var els = document.querySelectorAll('script[scene]');
 
-	compileDirectives(el, scene);
+	for(var idx = 0; idx < els.length; idx++) {
+		var el = els[idx];
+		var sceneId = _.getAttrValByName(el, 'scene');
+		if(root.childs[sceneId]) {
+			//warning
+			console.log('can not set the same scene id');
+			//then ignore this scene
+			continue;
+		}
+		//set app data structure
+		root.childs[sceneId] = new Scene({el: el, root: root});
+		root.childs[sceneId].parent = root;
+		//start compile the scene function
+		compileDirectives(root.childs[sceneId]);
+	}
 }
 
 module.exports = {

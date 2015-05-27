@@ -1,14 +1,23 @@
 var config = require('../config');
 var _ = require('../utils');
 
-EnterTransMap = {};
+var EnterTransMap = {};
+var LeftTransMap = {};
 
-LeftTransMap = {};
+AnimationController = {
+  handleReady: function(next) {
+    var self = this;
 
-AnimationController = function(expression) {
-  var self = this;
-  //trigger all the animation event
-  var triggerTransition = function(transitionMap, cb) {
+    self.triggerTransition(EnterTransMap, next);
+  },
+  handleHold: function(next) {
+    var self = this;
+
+    self.triggerTransition(LeftTransMap, next);
+  },
+  triggerTransition: function(transitionMap, cb) {
+    var self = this;
+
     var keys = Object.keys(transitionMap).sort();
     if (!keys.length) return cb();
     var idx = 0;
@@ -35,7 +44,10 @@ AnimationController = function(expression) {
           handleEvent();
         }, 500);
 
-        elem.el.addEventListener("transitionend", function(e) {
+        elem.el.addEventListener('transitionend', function(e) {
+          //once
+          elem.el.removeEventListener('transitionend', arguments.callee);
+
           if (called) {
             return;
           }
@@ -46,50 +58,63 @@ AnimationController = function(expression) {
       });
     };
     return go(keys[idx++]);
-  };
-
-  self.$on("TriggerAllElementsEnterTransition", function() {
-    triggerTransition(EnterTransMap, function() {
-      return self.$dispatch("AllElementsEnterTransitionEnd");
-    });
-  });
-  self.$on("TriggerAllElementsLeftTransition", function() {
-    triggerTransition(LeftTransMap, function() {
-      return self.$dispatch("AllElementsLeftTransitionEnd");
-    });
-  });
-  self.$on("ClearAllElementsEnterTransition", function() {
-    return EnterTransMap = {};
-  });
-  self.$on("ClearAllElementsLeftTransition", function() {
-    return LeftTransMap = {};
-  });
+  },
+  //inject the arguments
+  bind: function(expression) {
+    //when ready then trigger enter animation
+    this.parent.$on('hook:readyForDirBehaviour', this.handleReady.bind(this));
+    //when hold then trigger left animation
+    this.parent.$on('hook:holdForDirBehaviour', this.handleHold.bind(this));
+  },
+  unbind: function() {
+    self.$off('hook:readyForDirBehaviour', this.handleReady);
+    self.$off('hook:holdForDirBehaviour', this.handleHold);
+    //reset the map
+    EnterTransMap = {};
+    LeftTransMap = {};
+  }
 }
 
-EnterAnimation = function(expression) {
-  var priority, transEffect;
-  priority = expression.split("/")[0];
-  transEffect = expression.split("/")[1];
-  if (!EnterTransMap[priority]) {
-    EnterTransMap[priority] = [];
+EnterAnimation = {
+  bind: function() {
+    var priority, transEffect;
+    var expression = this.expression;
+
+    priority = expression.split("/")[0];
+    transEffect = expression.split("/")[1];
+    if (!EnterTransMap[priority]) {
+      EnterTransMap[priority] = [];
+    }
+    EnterTransMap[priority].push({
+      el: this.el,
+      transEffect: transEffect
+    });
+  },
+  unbind: function() {
+    //reset the map
+    EnterTransMap = {};
   }
-  EnterTransMap[priority].push({
-    el: this.el,
-    transEffect: transEffect
-  });
 }
 
-LeftAnimation = function(expression) {
-  var priority, transEffect;
-  priority = expression.split("/")[0];
-  transEffect = expression.split("/")[1];
-  if (!LeftTransMap[priority]) {
-    LeftTransMap[priority] = [];
+LeftAnimation = {
+  bind: function() {
+    var priority, transEffect;
+    var expression = this.expression;
+
+    priority = expression.split("/")[0];
+    transEffect = expression.split("/")[1];
+    if (!LeftTransMap[priority]) {
+      LeftTransMap[priority] = [];
+    }
+    LeftTransMap[priority].push({
+      el: this.el,
+      transEffect: transEffect
+    });
+  },
+  unbind: function() {
+    //reset the map
+    LeftTransMap = {};
   }
-  LeftTransMap[priority].push({
-    el: this.el,
-    transEffect: transEffect
-  });
 }
 
 module.exports = {

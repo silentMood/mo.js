@@ -5,43 +5,68 @@ var compiler = require('./compile');
 
 function X(opts) {
 	var self = this;
+	//events
 	self.events = {};
+	//create app data structure
+	self.childs = self.scenes = {};
 
-	var el = null;
+	//set total container
 	if(opts && opts.elId) {
-		el = document.querySelector('#' + opts.elId);
+		self.container = document.querySelector('#' + opts.elId);
 	}
 	else {
-		el = document.body;
+		self.container = document.body;
 	}
 
-	var attrs = el.attributes;
+	//compile all the scenes
+	compiler.$compile(self.container, self);
+
+	//set the main interface
+	var attrs = self.container.attributes;
 	for(var i = 0; i < attrs.length; i ++) {
 		attr = attrs.item(i);
-		if(attr.nodeName.match(/mainScene/i)) {
-			self.currentView = attr.value;
+		if(attr.nodeName.match(/main/i)) {
+			self.currentScene = self.scenes[attr.value];
+			break;
 		}
 	}
-	if(!self.currentView) {
-		self.currentView = 'scene1';
+	if(!self.currentScene) {
+		//error
+		return console.log('have not set the main interface yet');
 	}
 
-	self.el = el;
-	self.childs = self.scenes = [];
-
-	self.$on('SceneSwitch', function(sceneId) {
-		self.el.innerHTML = "";
-		self.childs = self.scenes = [];
-		var template = document.getElementById(sceneId).innerHTML;
-		self.el.innerHTML = template;
-		compiler.$compile(self.el, self);
-	});
-
-	var template = document.getElementById(self.currentView).innerHTML;
-	self.el.innerHTML = template;
-	compiler.$compile(self.el, self);
+	//start the scene life cycle
+	self.$mount();
 }
 
-X.prototype = _.extend(event, {});
+//spread from this
+X.prototype = _.extend(event, {
+	$mount: function() {
+		assert(this.currentScene._status === 0);
+		if(!this.currentScene._isInit) {
+			this.currentScene.$init();
+		}
+		
+		//life cycle
+		this.currentScene.$pushStatus();
+	},
+	$unmount: function() {
+		//life cycle
+		this.currentScene.$pushStatus();
+	},
+	redirectTo: function(sceneId) {
+		var self = this;
+		var scene = self.scenes[sceneId];
+		assert(scene !== null);
+
+		self.currentScene = scene;
+
+		//redirect thing
+		self.$on('hook:left', function() {
+			self.$mount();
+		});
+		self.$unmount();
+	}
+});
 
 module.exports = X;

@@ -20,5 +20,24 @@ module.exports = {
 	    var reg = new RegExp('(\\s|^)'+className+'(\\s|$)');
 	    el.className=el.className.replace(reg,' ');
 	  }
+	},
+	getAttrValByName: function(el, attrName) {
+		var attrs = el.attributes;
+		for(var i = 0; i < attrs.length; i++) {
+			var attr = attrs.item(i);
+			if(attr.nodeName.match(attrName)) {
+				return attr.value;
+			}
+		}
+	},
+	mixin: function(target, source) {
+		keys = Object.keys(source);
+		for(var idx = 0; idx < keys.length; idx++) {
+			var key = keys[idx];
+			if(target[key]) {
+				continue;
+			}
+			target[key] = source[key];
+		}
 	}
 }
