@@ -1,11 +1,11 @@
-var _ = require('./utils');
-var event = require('./event');
-var lifecycle = require('./lifecycle');
-var config = require('./config');
+var _ = require('../utils');
+var event = require('../core_mixins/event');
+var lifecycle = require('../core_mixins/lifecycle');
+var config = require('../config');
 
 var baseId = 0;
 function generateSceneId() {
-	return baseId++;
+	return config.scenePrefix + baseId++;
 }
 
 function Scene(opts) {
@@ -24,6 +24,8 @@ function Scene(opts) {
 	var el = document.createElement('div');
 	el.innerHTML = opts.el.innerHTML;
 	self.el = el;
+
+	self.$init();
 }
 
 //core life cycle
@@ -50,8 +52,6 @@ Scene.prototype = _.extend(event, lifecycle, {
 			self.$removeEl();
 			next();
 		});
-
-		self._isInit = true;
 	},
 	$link: function() {
 		for(var idx = 0; idx < this.fns.length; idx++) {

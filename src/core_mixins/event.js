@@ -1,4 +1,4 @@
-assert = require('./assert');
+assert = require('../assert');
 
 module.exports = {
 	$on: function(eventName, fn) {

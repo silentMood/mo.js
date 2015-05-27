@@ -1,7 +1,8 @@
-var assert = require('./assert');
-var _ = require('./utils');
-var event = require('./event');
-var compiler = require('./compile');
+var assert = require('../assert');
+var _ = require('../utils');
+var event = require('../core_mixins/event');
+var compiler = require('../compiler');
+var mount = require('../mount');
 
 function X(opts) {
 	var self = this;
@@ -36,37 +37,9 @@ function X(opts) {
 	}
 
 	//start the scene life cycle
-	self.$mount();
+	mount.$mount(self.currentScene);
 }
 
-//spread from this
-X.prototype = _.extend(event, {
-	$mount: function() {
-		assert(this.currentScene._status === 0);
-		if(!this.currentScene._isInit) {
-			this.currentScene.$init();
-		}
-		
-		//life cycle
-		this.currentScene.$pushStatus();
-	},
-	$unmount: function() {
-		//life cycle
-		this.currentScene.$pushStatus();
-	},
-	redirectTo: function(sceneId) {
-		var self = this;
-		var scene = self.scenes[sceneId];
-		assert(scene !== null);
-
-		self.currentScene = scene;
-
-		//redirect thing
-		self.$on('hook:goto', function() {
-			self.$mount();
-		});
-		self.$unmount();
-	}
-});
+X.prototype = _.extend(event, {});
 
 module.exports = X;

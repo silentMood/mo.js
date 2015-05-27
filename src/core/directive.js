@@ -1,6 +1,6 @@
-var _ = require('./utils');
-var event = require('./event');
-var directives = require('./directives/index');
+var _ = require('../utils');
+var event = require('../core_mixins/event');
+var directives = require('../directives/index');
 
 function Directive(opts) {
 	assert(opts.expression !== null);
