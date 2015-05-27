@@ -66,7 +66,7 @@ function compile(el, root) {
 			continue;
 		}
 		//set app data structure
-		root.childs[sceneId] = new Scene({el: el, root: root});
+		root.childs[sceneId] = new Scene({el: el, root: root, sceneId: sceneId});
 		root.childs[sceneId].parent = root;
 		//start compile the scene function
 		compileDirectives(root.childs[sceneId]);

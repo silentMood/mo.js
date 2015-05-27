@@ -1,3 +1,1 @@
-var X = require('./core/x');
-
-window.X = X;
+window.X = require('./core/x');

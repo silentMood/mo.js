@@ -15,6 +15,13 @@ AnimationController = {
 
     self.triggerTransition(LeftTransMap, next);
   },
+  cleanClass: function(transitionMap) {
+    Object.keys(transitionMap).forEach(function(key){
+      transitionMap[key].forEach(function(elem) {
+        _.removeClass(elem.el, elem.transEffect);
+      });
+    });
+  },
   triggerTransition: function(transitionMap, cb) {
     var self = this;
 
@@ -22,7 +29,9 @@ AnimationController = {
     if (!keys.length) return cb();
     var idx = 0;
     function go(key) {
-      if (idx > keys.length) return cb();
+      if (idx > keys.length) {
+        return cb();
+      }
       var transitionendNums = 0;
       transitionMap[key].forEach(function(elem) {
         setTimeout(function() {
@@ -61,14 +70,19 @@ AnimationController = {
   },
   //inject the arguments
   bind: function(expression) {
+    this.handleReady = this.handleReady.bind(this);
+    this.handleHold = this.handleHold.bind(this);
+
     //when ready then trigger enter animation
-    this.parent.$on('hook:readyForDirBehaviour', this.handleReady.bind(this));
+    this.parent.$on('hook:readyForDirBehaviour', this.handleReady);
     //when hold then trigger left animation
-    this.parent.$on('hook:holdForDirBehaviour', this.handleHold.bind(this));
+    this.parent.$on('hook:holdForDirBehaviour', this.handleHold);
   },
   unbind: function() {
-    self.$off('hook:readyForDirBehaviour', this.handleReady);
-    self.$off('hook:holdForDirBehaviour', this.handleHold);
+    this.cleanClass(EnterTransMap);
+    this.cleanClass(LeftTransMap);
+    this.parent.$off('hook:readyForDirBehaviour');
+    this.parent.$off('hook:holdForDirBehaviour');
     //reset the map
     EnterTransMap = {};
     LeftTransMap = {};

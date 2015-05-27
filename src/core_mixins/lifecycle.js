@@ -32,5 +32,8 @@ module.exports = {
 				this.$emit('hook:goto');
 				break;
 		}
+	},
+	$canLeft: function() {
+		return this._status === 3;
 	}
 }

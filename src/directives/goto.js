@@ -1,24 +1,16 @@
-var config = require('../config');
+var router = require('../router');
 var _ = require('../utils');
 
 go = {
-	// handleClick: function() {
-	// 	self.parent.$broadcast("TriggerAllElementsLeftTransition");
-	// },
+	handleClick: function() {
+		router.$route(this.expression);
+	},
 	bind: function(expression) {
-		// var self = this;
-		// //need refactor
-		// self.parent.$on("AllElementsLeftTransitionEnd", function() {
-		// 	self.parent.$broadcast('ClearAllElementsEnterTransition');
-		// 	self.parent.$broadcast('ClearAllElementsLeftTransition');
-		// 	self.$dispatch('SceneSwitch', expression);
-		// });
-
-		// self.el.addEventListener('click', self.handleClick);
+		this.handleClick = this.handleClick.bind(this);
+		this.el.addEventListener('click', this.handleClick);
 	},
 	unbind: function() {
-		// this.el.removeEventListener('click', this.handleClick);
-		// this.parent.$off('AllElementsLeftTransitionEnd');
+		this.el.removeEventListener('click', this.handleClick);
 	}
 }
 

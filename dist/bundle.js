@@ -74,7 +74,7 @@ function compile(el, root) {
 			continue;
 		}
 		//set app data structure
-		root.childs[sceneId] = new Scene({el: el, root: root});
+		root.childs[sceneId] = new Scene({el: el, root: root, sceneId: sceneId});
 		root.childs[sceneId].parent = root;
 		//start compile the scene function
 		compileDirectives(root.childs[sceneId]);
@@ -84,7 +84,7 @@ function compile(el, root) {
 module.exports = {
 	$compile: compile
 };
-},{"../assert":1,"../config":4,"../core/directive":5,"../core/scene":6,"../utils":16}],3:[function(require,module,exports){
+},{"../assert":1,"../config":4,"../core/directive":5,"../core/scene":6,"../utils":17}],3:[function(require,module,exports){
 var compile = require('./compile');
 
 module.exports = compile;
@@ -131,7 +131,7 @@ function Directive(opts) {
 Directive.prototype = _.extend(event, {});
 
 module.exports = Directive;
-},{"../core_mixins/event":8,"../directives/index":11,"../utils":16}],6:[function(require,module,exports){
+},{"../core_mixins/event":8,"../directives/index":11,"../utils":17}],6:[function(require,module,exports){
 var _ = require('../utils');
 var event = require('../core_mixins/event');
 var lifecycle = require('../core_mixins/lifecycle');
@@ -210,17 +210,22 @@ Scene.prototype = _.extend(event, lifecycle, {
 		this.parent.container.appendChild(this.el);
 	},
 	$removeEl: function() {
-		this.parent.container.removeChilds();
+		this.parent.container.removeChild(this.el);
+	},
+	$canUnmount: function() {
+		return this._status === 3;
 	}
 });
 
 module.exports = Scene;
-},{"../config":4,"../core_mixins/event":8,"../core_mixins/lifecycle":9,"../utils":16}],7:[function(require,module,exports){
+},{"../config":4,"../core_mixins/event":8,"../core_mixins/lifecycle":9,"../utils":17}],7:[function(require,module,exports){
 var assert = require('../assert');
 var _ = require('../utils');
 var event = require('../core_mixins/event');
 var compiler = require('../compiler');
 var mount = require('../mount');
+
+var router = require('../router');
 
 function X(opts) {
 	var self = this;
@@ -254,6 +259,9 @@ function X(opts) {
 		return console.log('have not set the main interface yet');
 	}
 
+	//config the router
+	router.$config(self);
+
 	//start the scene life cycle
 	mount.$mount(self.currentScene);
 }
@@ -261,7 +269,7 @@ function X(opts) {
 X.prototype = _.extend(event, {});
 
 module.exports = X;
-},{"../assert":1,"../compiler":3,"../core_mixins/event":8,"../mount":14,"../utils":16}],8:[function(require,module,exports){
+},{"../assert":1,"../compiler":3,"../core_mixins/event":8,"../mount":14,"../router":15,"../utils":17}],8:[function(require,module,exports){
 assert = require('../assert');
 
 module.exports = {
@@ -366,43 +374,38 @@ module.exports = {
 				this.$emit('hook:goto');
 				break;
 		}
+	},
+	$canLeft: function() {
+		return this._status === 3;
 	}
 }
 },{}],10:[function(require,module,exports){
-var config = require('../config');
+var router = require('../router');
 var _ = require('../utils');
 
 go = {
-	// handleClick: function() {
-	// 	self.parent.$broadcast("TriggerAllElementsLeftTransition");
-	// },
+	handleClick: function() {
+		router.$route(this.expression);
+	},
 	bind: function(expression) {
-		// var self = this;
-		// //need refactor
-		// self.parent.$on("AllElementsLeftTransitionEnd", function() {
-		// 	self.parent.$broadcast('ClearAllElementsEnterTransition');
-		// 	self.parent.$broadcast('ClearAllElementsLeftTransition');
-		// 	self.$dispatch('SceneSwitch', expression);
-		// });
-
-		// self.el.addEventListener('click', self.handleClick);
+		this.handleClick = this.handleClick.bind(this);
+		this.el.addEventListener('click', this.handleClick);
 	},
 	unbind: function() {
-		// this.el.removeEventListener('click', this.handleClick);
-		// this.parent.$off('AllElementsLeftTransitionEnd');
+		this.el.removeEventListener('click', this.handleClick);
 	}
 }
 
 module.exports = {
   go: go
 }
-},{"../config":4,"../utils":16}],11:[function(require,module,exports){
+},{"../router":15,"../utils":17}],11:[function(require,module,exports){
 var transition = require('./transition');
 var go = require('./goto');
 var _ = require('../utils');
 
 module.exports = _.extend(transition, go);
-},{"../utils":16,"./goto":10,"./transition":12}],12:[function(require,module,exports){
+},{"../utils":17,"./goto":10,"./transition":12}],12:[function(require,module,exports){
 var config = require('../config');
 var _ = require('../utils');
 
@@ -420,6 +423,13 @@ AnimationController = {
 
     self.triggerTransition(LeftTransMap, next);
   },
+  cleanClass: function(transitionMap) {
+    Object.keys(transitionMap).forEach(function(key){
+      transitionMap[key].forEach(function(elem) {
+        _.removeClass(elem.el, elem.transEffect);
+      });
+    });
+  },
   triggerTransition: function(transitionMap, cb) {
     var self = this;
 
@@ -427,7 +437,9 @@ AnimationController = {
     if (!keys.length) return cb();
     var idx = 0;
     function go(key) {
-      if (idx > keys.length) return cb();
+      if (idx > keys.length) {
+        return cb();
+      }
       var transitionendNums = 0;
       transitionMap[key].forEach(function(elem) {
         setTimeout(function() {
@@ -466,14 +478,19 @@ AnimationController = {
   },
   //inject the arguments
   bind: function(expression) {
+    this.handleReady = this.handleReady.bind(this);
+    this.handleHold = this.handleHold.bind(this);
+
     //when ready then trigger enter animation
-    this.parent.$on('hook:readyForDirBehaviour', this.handleReady.bind(this));
+    this.parent.$on('hook:readyForDirBehaviour', this.handleReady);
     //when hold then trigger left animation
-    this.parent.$on('hook:holdForDirBehaviour', this.handleHold.bind(this));
+    this.parent.$on('hook:holdForDirBehaviour', this.handleHold);
   },
   unbind: function() {
-    self.$off('hook:readyForDirBehaviour', this.handleReady);
-    self.$off('hook:holdForDirBehaviour', this.handleHold);
+    this.cleanClass(EnterTransMap);
+    this.cleanClass(LeftTransMap);
+    this.parent.$off('hook:readyForDirBehaviour');
+    this.parent.$off('hook:holdForDirBehaviour');
     //reset the map
     EnterTransMap = {};
     LeftTransMap = {};
@@ -527,10 +544,8 @@ module.exports = {
   leftanimation: LeftAnimation,
   animationcontroller: AnimationController
 }
-},{"../config":4,"../utils":16}],13:[function(require,module,exports){
-var X = require('./core/x');
-
-window.X = X;
+},{"../config":4,"../utils":17}],13:[function(require,module,exports){
+window.X = require('./core/x');
 },{"./core/x":7}],14:[function(require,module,exports){
 //this module control lifecycle
 module.exports = {
@@ -538,12 +553,44 @@ module.exports = {
 		//life cycle
 		scene.$pushStatus();
 	},
-	$unmount: function() {
+	$unmount: function(scene) {
 		//life cycle
+		if(!scene.$canUnmount()) {
+			//warn
+			console.log('can not leave, because the status is not right');
+		};
+
 		scene.$pushStatus();
 	}
 }
 },{}],15:[function(require,module,exports){
+var mount = require('./mount');
+
+module.exports = {
+	app: null,
+	$config: function(app) {
+		this.app = app;
+	},
+	$route: function(sceneId) {
+		var self = this;
+		var scene = self.app.scenes[sceneId];
+		if(!scene) {
+			//error
+			return console.log('the scene you want to redirect does not exist');
+		}
+		//when old scene unmount ok then mount new scene
+		self.app.currentScene.$on('hook:goto', function() {
+			self.app.currentScene.$off('hook:goto', arguments.callee);
+			//reset the current scene
+			self.app.currentScene = scene;
+			//mount the new scene
+			mount.$mount(self.app.currentScene);
+		})
+		//unmount the old scene
+		mount.$unmount(self.app.currentScene);
+	}
+}
+},{"./mount":14}],16:[function(require,module,exports){
 module.exports = {
 	hasClass: function (el, className) {
   	return !!el.className.match(new RegExp('(\\s|^)'+className+'(\\s|$)'));
@@ -567,12 +614,12 @@ module.exports = {
 		}
 	}
 }
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 var dom = require('./dom');
 var obj = require('./obj');
 
 module.exports = obj.extend(dom, obj);
-},{"./dom":15,"./obj":17}],17:[function(require,module,exports){
+},{"./dom":16,"./obj":18}],18:[function(require,module,exports){
 module.exports = {
 	extend: function(s, ss) {
 		var res = {};

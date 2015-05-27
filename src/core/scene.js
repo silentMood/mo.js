@@ -76,7 +76,10 @@ Scene.prototype = _.extend(event, lifecycle, {
 		this.parent.container.appendChild(this.el);
 	},
 	$removeEl: function() {
-		this.parent.container.removeChilds();
+		this.parent.container.removeChild(this.el);
+	},
+	$canUnmount: function() {
+		return this._status === 3;
 	}
 });
 

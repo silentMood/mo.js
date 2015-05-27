@@ -4,6 +4,8 @@ var event = require('../core_mixins/event');
 var compiler = require('../compiler');
 var mount = require('../mount');
 
+var router = require('../router');
+
 function X(opts) {
 	var self = this;
 	//events
@@ -35,6 +37,9 @@ function X(opts) {
 		//error
 		return console.log('have not set the main interface yet');
 	}
+
+	//config the router
+	router.$config(self);
 
 	//start the scene life cycle
 	mount.$mount(self.currentScene);

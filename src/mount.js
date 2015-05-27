@@ -4,8 +4,13 @@ module.exports = {
 		//life cycle
 		scene.$pushStatus();
 	},
-	$unmount: function() {
+	$unmount: function(scene) {
 		//life cycle
+		if(!scene.$canUnmount()) {
+			//warn
+			console.log('can not leave, because the status is not right');
+		};
+
 		scene.$pushStatus();
 	}
 }
