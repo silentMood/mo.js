@@ -4,6 +4,7 @@ module.exports = {
 	_status: 0,
 	$pushStatus: function(err) {
 		if(err) {
+			//error
 			return console.log(err);
 		}
 		var next = arguments.callee.bind(this);
@@ -25,59 +26,11 @@ module.exports = {
 				this.$emit('hook:left', next);
 				break;
 			case 6:
+				//reset status
+				this._status = 0;
+				//can go
 				this.$emit('hook:goto');
 				break;
-		}
-	},
-	$init: function() {
-		var self = this;
-
-		self.$on('hook:prepare', function(next) {
-			self.parent.container.appendChild(self.el);
-			self.$link()
-			next();
-		});
-
-		self.$on('hook:ready', function(next){
-			var from = 0;
-			var eventName = 'hook:readyForDirBehaviour'
-			var to = self.events[eventName].length;
-			var cb = function() {
-				from++;
-				if(from === to) next();
-			}
-			self.$emit(eventName, cb);
-		});
-
-		self.$on('hook:hold', function(next) {
-			var from = 0;
-			var eventName = 'hook:holdForDirBehaviour'
-			var to = self.events[eventName].length;
-			var cb = function() {
-				from++;
-				if(from === to) next();
-			}
-			self.$emit(eventName, cb);
-			next();
-		});
-
-		self.$on('hook:left', function(next) {
-			self.$unlink();
-			self.parent.container.removeChilds();
-			this._status = 0;
-			next();
-		});
-
-		self._isInit = true;
-	},
-	$link: function() {
-		for(var idx = 0; idx < this.fns.length; idx++) {
-			this.fns[idx]();
-		}
-	},
-	$unlink: function() {
-		for(var idx = 0; idx < this.ufns.length; idx++) {
-			this.ufns[idx]();
 		}
 	}
 }

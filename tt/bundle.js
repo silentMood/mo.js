@@ -367,6 +367,7 @@ module.exports = {
 	_status: 0,
 	$pushStatus: function(err) {
 		if(err) {
+			//error
 			return console.log(err);
 		}
 		var next = arguments.callee.bind(this);
@@ -388,59 +389,11 @@ module.exports = {
 				this.$emit('hook:left', next);
 				break;
 			case 6:
+				//reset status
+				this._status = 0;
+				//can go
 				this.$emit('hook:goto');
 				break;
-		}
-	},
-	$init: function() {
-		var self = this;
-
-		self.$on('hook:prepare', function(next) {
-			self.parent.container.appendChild(self.el);
-			self.$link()
-			next();
-		});
-
-		self.$on('hook:ready', function(next){
-			var from = 0;
-			var eventName = 'hook:readyForDirBehaviour'
-			var to = self.events[eventName].length;
-			var cb = function() {
-				from++;
-				if(from === to) next();
-			}
-			self.$emit(eventName, cb);
-		});
-
-		self.$on('hook:hold', function(next) {
-			var from = 0;
-			var eventName = 'hook:holdForDirBehaviour'
-			var to = self.events[eventName].length;
-			var cb = function() {
-				from++;
-				if(from === to) next();
-			}
-			self.$emit(eventName, cb);
-			next();
-		});
-
-		self.$on('hook:left', function(next) {
-			self.$unlink();
-			self.parent.container.removeChilds();
-			this._status = 0;
-			next();
-		});
-
-		self._isInit = true;
-	},
-	$link: function() {
-		for(var idx = 0; idx < this.fns.length; idx++) {
-			this.fns[idx]();
-		}
-	},
-	$unlink: function() {
-		for(var idx = 0; idx < this.ufns.length; idx++) {
-			this.ufns[idx]();
 		}
 	}
 }
@@ -474,7 +427,58 @@ function Scene(opts) {
 }
 
 //core life cycle
-Scene.prototype = _.extend(event, lifecycle);
+Scene.prototype = _.extend(event, lifecycle, {
+	$init: function() {
+		var self = this;
+
+		self.$on('hook:prepare', function(next) {
+			self.$insertEl();
+			self.$link()
+			next();
+		});
+
+		self.$on('hook:ready', function(next){
+			self.$runAllFns('hook:readyForDirBehaviour', next);
+		});
+
+		self.$on('hook:hold', function(next) {
+			self.$runAllFns('hook:holdForDirBehaviour', next);
+		});
+
+		self.$on('hook:left', function(next) {
+			self.$unlink();
+			self.$removeEl();
+			next();
+		});
+
+		self._isInit = true;
+	},
+	$link: function() {
+		for(var idx = 0; idx < this.fns.length; idx++) {
+			this.fns[idx]();
+		}
+	},
+	$unlink: function() {
+		for(var idx = 0; idx < this.ufns.length; idx++) {
+			this.ufns[idx]();
+		}
+	},
+	$runAllFns: function(eventName, next) {
+		var from = 0;
+		var to = this.events[eventName].length;
+		var cb = function() {
+			from++;
+			if(from === to) next();
+		}
+		this.$emit(eventName, cb);
+	},
+	$insertEl: function() {
+		this.parent.container.appendChild(this.el);
+	},
+	$removeEl: function() {
+		this.parent.container.removeChilds();
+	}
+});
 
 module.exports = Scene;
 },{"./config":3,"./event":8,"./lifecycle":10,"./utils":12}],12:[function(require,module,exports){
