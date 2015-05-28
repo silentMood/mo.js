@@ -13,8 +13,7 @@ module.exports = {
 			return console.log('the scene you want to redirect does not exist');
 		}
 		//when old scene unmount ok then mount new scene
-		self.app.currentScene.$on('hook:goto', function() {
-			self.app.currentScene.$off('hook:goto', arguments.callee);
+		self.app.currentScene.$once('hook:goto', function() {
 			//reset the current scene
 			self.app.currentScene = scene;
 			//mount the new scene

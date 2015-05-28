@@ -294,6 +294,14 @@ module.exports = {
 		}
 		this.events[eventName].push(fn);
 	},
+	$once: function(eventName, fn) {
+		var self = this;
+		
+		self.$on(eventName, function() {
+			fn();
+			self.$off(eventName, arguments.callee);
+		});
+	},
 	$off: function(eventName, fn) {
 		assert(typeof eventName === 'string');
 
@@ -558,6 +566,7 @@ module.exports = {
 		if(!scene.$canUnmount()) {
 			//warn
 			console.log('can not leave, because the status is not right');
+			return;
 		};
 
 		scene.$pushStatus();
@@ -579,8 +588,7 @@ module.exports = {
 			return console.log('the scene you want to redirect does not exist');
 		}
 		//when old scene unmount ok then mount new scene
-		self.app.currentScene.$on('hook:goto', function() {
-			self.app.currentScene.$off('hook:goto', arguments.callee);
+		self.app.currentScene.$once('hook:goto', function() {
 			//reset the current scene
 			self.app.currentScene = scene;
 			//mount the new scene

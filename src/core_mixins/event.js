@@ -22,6 +22,14 @@ module.exports = {
 		}
 		this.events[eventName].push(fn);
 	},
+	$once: function(eventName, fn) {
+		var self = this;
+		
+		self.$on(eventName, function() {
+			fn();
+			self.$off(eventName, arguments.callee);
+		});
+	},
 	$off: function(eventName, fn) {
 		assert(typeof eventName === 'string');
 

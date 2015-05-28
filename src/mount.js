@@ -9,6 +9,7 @@ module.exports = {
 		if(!scene.$canUnmount()) {
 			//warn
 			console.log('can not leave, because the status is not right');
+			return;
 		};
 
 		scene.$pushStatus();
