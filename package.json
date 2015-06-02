@@ -19,15 +19,12 @@
     "grunt-contrib-concat": "0.5.0",
     "grunt-contrib-uglify": "0.9.0",
     "grunt-exec": "0.4.0",
-    "sinon": "1.10.0",
-    "chai": "2.1.0",
-    "sinon-chai": "2.7.0",
-    "should": "3.3.0",
+    "jasmine": "2.3.0",
     "karma": "0.12.30",
+    "karma-jasmine": "0.3.5",
     "grunt-karma": "0.11.0",
+    "karma-commonjs": "0.0.13",
     "karma-chrome-launcher": "0.1.10",
-    "karma-safari-launcher": "0.1.1",
-    "karma-mocha": "0.1.10",
-    "webdriverio": "2.4.5"
+    "karma-safari-launcher": "0.1.1"
   }
 }

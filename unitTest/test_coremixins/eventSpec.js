@@ -1,11 +1,3 @@
-//all references
-var chai = require("chai");
-var sinon = require("sinon");
-var should = require('should');
-var sinonChai = require("sinon-chai");
-chai.should();
-chai.use(sinonChai);
-
 //test module
 var event = require('../../src/core_mixins/event');
 
@@ -14,22 +6,22 @@ describe('event', function(){
 	var target = event;
 
 	beforeEach(function() {
-		fn = sinon.spy(function(){});
+		fn = jasmine.createSpy('spy');
 		target.$off("test");
 	});
 
   it('test $on', function(){
   	target.$on("test", fn);
-    (target.events !== null).should.be.true;
-    target.events['test'].length.should.be.eql(1);
+    expect(target.events !== null).toBe(true);
+    expect(target.events['test'].length).toBe(1);
   });
 
   it('test $emit', function() {
   	target.$on("test", fn);
   	target.$emit('test');
-  	fn.should.have.been.calledOnce;
+    expect(fn.calls.count()).toEqual(1);
   	target.$emit('test');
-  	fn.should.have.been.calledTwice;
+    expect(fn.calls.count()).toEqual(2);
   });
 
   it('test $off', function() {
@@ -37,18 +29,18 @@ describe('event', function(){
   	target.$on('test', fnt);
   	target.$on('test', fn);
   	target.$off('test', fn);
-  	target.events['test'].length.should.eql(1);
+    expect(target.events['test'].length).toBe(1);
   	target.$off('test', fn);
-  	target.events['test'].length.should.eql(1);
+    expect(target.events['test'].length).toBe(1);
   	target.$off('test', fnt);
-  	(target.events['test'] === null).should.be.true;
+  	expect(target.events['test'] === null).toBe(true);
   });
 
   it('test $once', function() {
   	target.$once('test', fn);
   	target.$emit('test', fn);
   	target.$emit('test', fn);
-  	fn.should.have.been.calledOnce;
-  	(target.events['test'] === null).should.be.true;
+    expect(fn.calls.count()).toEqual(1);
+    expect(target.events['test'] === null).toBe(true);
   });
 });

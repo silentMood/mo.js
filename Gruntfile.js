@@ -37,9 +37,46 @@ module.exports = function(grunt) {
           livereload: 35729
         }
       }
-    }
+    },
+    karma: {
+      options: {
+        frameworks: ['jasmine', 'commonjs'],
+        files: [
+          'src/**/*.js',
+          'unitTest/**/*.js'
+        ],
+        preprocessors: {
+          'src/**/*.js': ['commonjs'],
+          'unitTest/**/*.js': ['commonjs']
+        },
+        singleRun: true
+      },
+      browsers: {
+        options: {
+          browsers: ['Chrome', 'Safari'],
+          reporters: ['progress']
+        }
+      },
+      coverage: {
+        options: {
+          browsers: ['PhantomJS'],
+          reporters: ['progress', 'coverage'],
+          preprocessors: {
+            'src/**/*.js': ['commonjs', 'coverage'],
+            'unitTest/**/*.js': ['commonjs']
+          },
+          coverageReporter: {
+            reporters: [
+              { type: 'lcov' },
+              { type: 'text-summary' }
+            ]
+          }
+        }
+      }
+    },
   });
-
+  
+  grunt.loadNpmTasks('grunt-karma')
   grunt.loadNpmTasks('grunt-browserify');
   grunt.loadNpmTasks('grunt-exec');
   grunt.loadNpmTasks("grunt-contrib-connect");
@@ -54,5 +91,8 @@ module.exports = function(grunt) {
   grunt.registerTask('build', [
     'browserify',
     //todo
+  ]);
+  grunt.registerTask('test', [
+    'karma:browsers'
   ]);
 };
