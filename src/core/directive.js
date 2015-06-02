@@ -1,4 +1,5 @@
 var _ = require('../utils');
+var base = require('./base');
 var event = require('../core_mixins/event');
 var directives = require('../directives/index');
 
@@ -31,6 +32,6 @@ function Directive(opts) {
 	}
 }
 
-Directive.prototype = _.extend(event, {});
+Directive.prototype = _.extend(event, base);
 
 module.exports = Directive;

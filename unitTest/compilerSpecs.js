@@ -1,9 +1,5 @@
 var assert = require('assert');
-var compile = require('../src/compile');
-
-mockDom = {
-	
-}
+var compile = require('../src/compiler');
 
 describe('compile', function(){
 

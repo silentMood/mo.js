@@ -1,0 +1,2 @@
+require('./eventSpec');
+require('./lifecycleSpec');

@@ -6,7 +6,7 @@
   "author": "silentmood",
   "license": "MIT",
   "scripts": {
-    "test": "mocha ./test"
+    "test": "mocha -R spec ./unitTest"
   },
   "devDependencies": {
     "grunt": "~0.4.2",
@@ -18,6 +18,11 @@
     "grunt-usemin": "3.0.0",
     "grunt-contrib-concat": "0.5.0",
     "grunt-contrib-uglify": "0.9.0",
-    "grunt-exec": "0.4.0"
+    "grunt-exec": "0.4.0",
+    "sinon": "1.10.0",
+    "chai": "2.1.0",
+    "sinon-chai": "2.7.0",
+    "should": "3.3.0",
+    "webdriverio": "2.4.5"
   }
 }

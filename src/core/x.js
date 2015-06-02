@@ -1,5 +1,6 @@
 var assert = require('../assert');
 var _ = require('../utils');
+var base = require('./base');
 var event = require('../core_mixins/event');
 var compiler = require('../compiler');
 var mount = require('../mount');
@@ -45,6 +46,6 @@ function X(opts) {
 	mount.$mount(self.currentScene);
 }
 
-X.prototype = _.extend(event, {});
+X.prototype = _.extend(event, base);
 
 module.exports = X;

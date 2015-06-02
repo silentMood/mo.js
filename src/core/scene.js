@@ -1,4 +1,5 @@
 var _ = require('../utils');
+var base = require('./base');
 var event = require('../core_mixins/event');
 var lifecycle = require('../core_mixins/lifecycle');
 var config = require('../config');
@@ -29,7 +30,7 @@ function Scene(opts) {
 }
 
 //core life cycle
-Scene.prototype = _.extend(event, lifecycle, {
+Scene.prototype = _.extend(event, lifecycle, base, {
 	$init: function() {
 		var self = this;
 

@@ -33,6 +33,7 @@ module.exports = {
 	$off: function(eventName, fn) {
 		assert(typeof eventName === 'string');
 
+		if(!this.events) return;
 		if(!!fn) {
 			for(var idx = 0; idx < this.events[eventName].length; idx++) {
 				if(fn === this.events[eventName][idx]) {
@@ -41,9 +42,10 @@ module.exports = {
 					break;
 				}
 			}
+			if(!this.events[eventName].length) this.events[eventName] = null;
 		} else {
 			//remove all the fn
-			this.events[eventName] = []
+			this.events[eventName] = null;
 		}
 	},
 	$emit: function(eventName, info) {
@@ -52,26 +54,6 @@ module.exports = {
 			fns.forEach(function(fn, idx) {
 				fn(info);
 			});
-		}
-	},
-	$dispatch: function(eventName, info) {
-		var parent = null;
-		var scope = this;
-		while(parent = scope.parent) {
-			scope = parent;
-			scope.$emit(eventName, info);
-		}
-	},
-	$broadcast: function(eventName, info) {
-		var scopes = [this];
-		while(scopes.length) {
-			var scope = scopes[0];
-			var childs = scope.childs
-			for(var i = 0; i < childs.length; i++) {
-				childs[i].$emit(eventName, info);
-				scopes.push(childs[i]);
-			}
-			scopes.shift();
 		}
 	}
 }
