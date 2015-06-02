@@ -23,6 +23,11 @@
     "chai": "2.1.0",
     "sinon-chai": "2.7.0",
     "should": "3.3.0",
+    "karma": "0.12.30",
+    "grunt-karma": "0.11.0",
+    "karma-chrome-launcher": "0.1.10",
+    "karma-safari-launcher": "0.1.1",
+    "karma-mocha": "0.1.10",
     "webdriverio": "2.4.5"
   }
 }

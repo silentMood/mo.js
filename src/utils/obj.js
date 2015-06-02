@@ -10,7 +10,6 @@ module.exports = {
 		});
 		return res;
 	},
-	
 	mixin: function(target, source) {
 		var keys = Object.keys(source);
 		var key;

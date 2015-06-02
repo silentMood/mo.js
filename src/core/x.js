@@ -41,7 +41,7 @@ function X(opts) {
 		self.container = document.body;
 	}
 
-	//compile all the scenes
+	//generate all the scenes
 	generateScenes(self);
 
 	//set the main interface
