@@ -8,18 +8,19 @@ module.exports = function(expression) {
 },{}],2:[function(require,module,exports){
 var config = require('../config');
 var assert = require('../assert');
-var Scene = require('../core/scene');
 var Directive = require('../core/directive');
 var _ = require('../utils');
 
 var sceneIdentifier = 'scene';
 
-function linkDirectives(el, scene) {
+function generateLinkFns(el, scene) {
 	assert(scene !== null);
+
+	var linkedAttrNames = [];
 
 	var attrs = el.attributes;
 	for(var i = 0; i < attrs.length; i++) {
-		attr = attrs.item(i);
+		var attr = attrs.item(i);
 		if(attr.nodeName.match(config.prefix)) {
 			var dir = new Directive({
 				dirName: attr.nodeName.replace(config.prefix, ''),
@@ -33,19 +34,25 @@ function linkDirectives(el, scene) {
 			//set the link fns
 			scene.fns.push(dir.bind.bind(dir));
 			scene.ufns.push(dir.unbind.bind(dir));
+			//linkedAttrNames
+			linkedAttrNames.push(attr.nodeName);
 		}
 	}
+	//remove the linked attribute
+	linkedAttrNames.forEach(function(name) {
+		attrs.removeNamedItem(name)
+	});
 }
 
-function compileDirectives(scene) {
+function compile(scene) {
 	assert(scene !== null);
 
 	var $nodes = [scene.el];
 	while($nodes.length) {
-		$el = $nodes[0];
-		linkDirectives($el, scene);
+		var $el = $nodes[0];
+		generateLinkFns($el, scene);
 		
-		$childNodes = $el.childNodes;
+		var $childNodes = $el.childNodes;
 		if(!$childNodes.length) {
 			$nodes.shift();
 			continue;
@@ -59,32 +66,10 @@ function compileDirectives(scene) {
 	}
 }
 
-function compile(el, root) {
-	assert(el !== null);
-	//compile all the things
-	var els = document.querySelectorAll('script[scene]');
-
-	for(var idx = 0; idx < els.length; idx++) {
-		var el = els[idx];
-		var sceneId = _.getAttrValByName(el, 'scene');
-		if(root.childs[sceneId]) {
-			//warning
-			console.log('can not set the same scene id');
-			//then ignore this scene
-			continue;
-		}
-		//set app data structure
-		root.childs[sceneId] = new Scene({el: el, root: root, sceneId: sceneId});
-		root.childs[sceneId].parent = root;
-		//start compile the scene function
-		compileDirectives(root.childs[sceneId]);
-	}
-}
-
 module.exports = {
 	$compile: compile
 };
-},{"../assert":1,"../config":4,"../core/directive":5,"../core/scene":6,"../utils":17}],3:[function(require,module,exports){
+},{"../assert":1,"../config":4,"../core/directive":6,"../utils":18}],3:[function(require,module,exports){
 var compile = require('./compile');
 
 module.exports = compile;
@@ -95,7 +80,31 @@ module.exports = {
 	scenePrefix: 'scene'
 };
 },{}],5:[function(require,module,exports){
+module.exports = {
+	$dispatch: function(eventName, info) {
+		var parent = null;
+		var scope = this;
+		while(parent = scope.parent) {
+			scope = parent;
+			scope.$emit(eventName, info);
+		}
+	},
+	$broadcast: function(eventName, info) {
+		var scopes = [this];
+		while(scopes.length) {
+			var scope = scopes[0];
+			var childs = scope.childs
+			for(var i = 0; i < childs.length; i++) {
+				childs[i].$emit(eventName, info);
+				scopes.push(childs[i]);
+			}
+			scopes.shift();
+		}
+	}
+}
+},{}],6:[function(require,module,exports){
 var _ = require('../utils');
+var base = require('./base');
 var event = require('../core_mixins/event');
 var directives = require('../directives/index');
 
@@ -128,14 +137,16 @@ function Directive(opts) {
 	}
 }
 
-Directive.prototype = _.extend(event, {});
+Directive.prototype = _.extend(event, base);
 
 module.exports = Directive;
-},{"../core_mixins/event":8,"../directives/index":11,"../utils":17}],6:[function(require,module,exports){
+},{"../core_mixins/event":9,"../directives/index":12,"../utils":18,"./base":5}],7:[function(require,module,exports){
 var _ = require('../utils');
+var base = require('./base');
 var event = require('../core_mixins/event');
 var lifecycle = require('../core_mixins/lifecycle');
 var config = require('../config');
+var compiler = require('../compiler');
 
 var baseId = 0;
 function generateSceneId() {
@@ -154,21 +165,20 @@ function Scene(opts) {
 	self.fns = [];
 	self.ufns = [];
 
-	//el
-	var el = document.createElement('div');
-	el.innerHTML = opts.el.innerHTML;
-	self.el = el;
+	//template
+	self.tpl = opts.tpl;
 
 	self.$init();
 }
 
 //core life cycle
-Scene.prototype = _.extend(event, lifecycle, {
+Scene.prototype = _.extend(event, lifecycle, base, {
 	$init: function() {
 		var self = this;
 
 		self.$on('hook:prepare', function(next) {
 			self.$insertEl();
+			compiler.$compile(self);
 			self.$link()
 			next();
 		});
@@ -207,6 +217,10 @@ Scene.prototype = _.extend(event, lifecycle, {
 		this.$emit(eventName, cb);
 	},
 	$insertEl: function() {
+		//get from template and insert
+		var el = document.createElement('div');
+		el.innerHTML = this.tpl.innerHTML;
+		this.el = el;
 		this.parent.container.appendChild(this.el);
 	},
 	$removeEl: function() {
@@ -218,14 +232,34 @@ Scene.prototype = _.extend(event, lifecycle, {
 });
 
 module.exports = Scene;
-},{"../config":4,"../core_mixins/event":8,"../core_mixins/lifecycle":9,"../utils":17}],7:[function(require,module,exports){
+},{"../compiler":3,"../config":4,"../core_mixins/event":9,"../core_mixins/lifecycle":10,"../utils":18,"./base":5}],8:[function(require,module,exports){
 var assert = require('../assert');
 var _ = require('../utils');
+var base = require('./base');
 var event = require('../core_mixins/event');
 var compiler = require('../compiler');
 var mount = require('../mount');
+var Scene = require('./scene');
 
 var router = require('../router');
+
+function generateScenes(root) {
+	var tpls = document.querySelectorAll('script[scene]');
+
+	for(var idx = 0; idx < tpls.length; idx++) {
+		var tpl = tpls[idx];
+		var sceneId = _.getAttrValByName(tpl, 'scene');
+		if(root.childs[sceneId]) {
+			//warning
+			console.log('can not set the same scene id');
+			//then ignore this scene
+			continue;
+		}
+		//set app data structure
+		root.childs[sceneId] = new Scene({tpl: tpl, root: root, sceneId: sceneId});
+		root.childs[sceneId].parent = root;
+	}
+}
 
 function X(opts) {
 	var self = this;
@@ -243,7 +277,7 @@ function X(opts) {
 	}
 
 	//compile all the scenes
-	compiler.$compile(self.container, self);
+	generateScenes(self);
 
 	//set the main interface
 	var attrs = self.container.attributes;
@@ -266,10 +300,10 @@ function X(opts) {
 	mount.$mount(self.currentScene);
 }
 
-X.prototype = _.extend(event, {});
+X.prototype = _.extend(event, base);
 
 module.exports = X;
-},{"../assert":1,"../compiler":3,"../core_mixins/event":8,"../mount":14,"../router":15,"../utils":17}],8:[function(require,module,exports){
+},{"../assert":1,"../compiler":3,"../core_mixins/event":9,"../mount":15,"../router":16,"../utils":18,"./base":5,"./scene":7}],9:[function(require,module,exports){
 assert = require('../assert');
 
 module.exports = {
@@ -305,6 +339,7 @@ module.exports = {
 	$off: function(eventName, fn) {
 		assert(typeof eventName === 'string');
 
+		if(!this.events) return;
 		if(!!fn) {
 			for(var idx = 0; idx < this.events[eventName].length; idx++) {
 				if(fn === this.events[eventName][idx]) {
@@ -313,9 +348,10 @@ module.exports = {
 					break;
 				}
 			}
+			if(!this.events[eventName].length) this.events[eventName] = null;
 		} else {
 			//remove all the fn
-			this.events[eventName] = []
+			this.events[eventName] = null;
 		}
 	},
 	$emit: function(eventName, info) {
@@ -325,29 +361,9 @@ module.exports = {
 				fn(info);
 			});
 		}
-	},
-	$dispatch: function(eventName, info) {
-		var parent = null;
-		var scope = this;
-		while(parent = scope.parent) {
-			scope = parent;
-			scope.$emit(eventName, info);
-		}
-	},
-	$broadcast: function(eventName, info) {
-		var scopes = [this];
-		while(scopes.length) {
-			var scope = scopes[0];
-			var childs = scope.childs
-			for(var i = 0; i < childs.length; i++) {
-				childs[i].$emit(eventName, info);
-				scopes.push(childs[i]);
-			}
-			scopes.shift();
-		}
 	}
 }
-},{"../assert":1}],9:[function(require,module,exports){
+},{"../assert":1}],10:[function(require,module,exports){
 //life cycle control
 //this means the scene
 module.exports = {
@@ -387,7 +403,7 @@ module.exports = {
 		return this._status === 3;
 	}
 }
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 var router = require('../router');
 var _ = require('../utils');
 
@@ -407,13 +423,13 @@ go = {
 module.exports = {
   go: go
 }
-},{"../router":15,"../utils":17}],11:[function(require,module,exports){
+},{"../router":16,"../utils":18}],12:[function(require,module,exports){
 var transition = require('./transition');
 var go = require('./goto');
 var _ = require('../utils');
 
 module.exports = _.extend(transition, go);
-},{"../utils":17,"./goto":10,"./transition":12}],12:[function(require,module,exports){
+},{"../utils":18,"./goto":11,"./transition":13}],13:[function(require,module,exports){
 var config = require('../config');
 var _ = require('../utils');
 
@@ -552,9 +568,9 @@ module.exports = {
   leftanimation: LeftAnimation,
   animationcontroller: AnimationController
 }
-},{"../config":4,"../utils":17}],13:[function(require,module,exports){
+},{"../config":4,"../utils":18}],14:[function(require,module,exports){
 window.X = require('./core/x');
-},{"./core/x":7}],14:[function(require,module,exports){
+},{"./core/x":8}],15:[function(require,module,exports){
 //this module control lifecycle
 module.exports = {
 	$mount: function(scene) {	
@@ -572,7 +588,7 @@ module.exports = {
 		scene.$pushStatus();
 	}
 }
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 var mount = require('./mount');
 
 module.exports = {
@@ -598,7 +614,7 @@ module.exports = {
 		mount.$unmount(self.app.currentScene);
 	}
 }
-},{"./mount":14}],16:[function(require,module,exports){
+},{"./mount":15}],17:[function(require,module,exports){
 module.exports = {
 	hasClass: function (el, className) {
   	return !!el.className.match(new RegExp('(\\s|^)'+className+'(\\s|$)'));
@@ -622,14 +638,15 @@ module.exports = {
 		}
 	}
 }
-},{}],17:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 var dom = require('./dom');
 var obj = require('./obj');
 
 module.exports = obj.extend(dom, obj);
-},{"./dom":16,"./obj":18}],18:[function(require,module,exports){
+},{"./dom":17,"./obj":19}],19:[function(require,module,exports){
 module.exports = {
-	extend: function(s, ss) {
+	//no need to test
+	extend: function() {
 		var res = {};
 		var args = Array.prototype.slice.call(arguments);
 		args.forEach(function(arg) {
@@ -641,14 +658,13 @@ module.exports = {
 	},
 	
 	mixin: function(target, source) {
-		keys = Object.keys(source);
+		var keys = Object.keys(source);
+		var key;
 		for(var idx = 0; idx < keys.length; idx++) {
-			var key = keys[idx];
-			if(target[key]) {
-				continue;
-			}
+			key = keys[idx];
+			if(target[key]) continue;
 			target[key] = source[key];
 		}
 	}
 }
-},{}]},{},[13])
+},{}]},{},[14])

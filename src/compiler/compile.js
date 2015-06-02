@@ -1,17 +1,18 @@
 var config = require('../config');
 var assert = require('../assert');
-var Scene = require('../core/scene');
 var Directive = require('../core/directive');
 var _ = require('../utils');
 
 var sceneIdentifier = 'scene';
 
-function linkDirectives(el, scene) {
+function generateLinkFns(el, scene) {
 	assert(scene !== null);
+
+	var linkedAttrNames = [];
 
 	var attrs = el.attributes;
 	for(var i = 0; i < attrs.length; i++) {
-		attr = attrs.item(i);
+		var attr = attrs.item(i);
 		if(attr.nodeName.match(config.prefix)) {
 			var dir = new Directive({
 				dirName: attr.nodeName.replace(config.prefix, ''),
@@ -25,19 +26,25 @@ function linkDirectives(el, scene) {
 			//set the link fns
 			scene.fns.push(dir.bind.bind(dir));
 			scene.ufns.push(dir.unbind.bind(dir));
+			//linkedAttrNames
+			linkedAttrNames.push(attr.nodeName);
 		}
 	}
+	//remove the linked attribute
+	linkedAttrNames.forEach(function(name) {
+		attrs.removeNamedItem(name)
+	});
 }
 
-function compileDirectives(scene) {
+function compile(scene) {
 	assert(scene !== null);
 
 	var $nodes = [scene.el];
 	while($nodes.length) {
-		$el = $nodes[0];
-		linkDirectives($el, scene);
+		var $el = $nodes[0];
+		generateLinkFns($el, scene);
 		
-		$childNodes = $el.childNodes;
+		var $childNodes = $el.childNodes;
 		if(!$childNodes.length) {
 			$nodes.shift();
 			continue;
@@ -48,28 +55,6 @@ function compileDirectives(scene) {
 			}
 		}
 		$nodes.shift();
-	}
-}
-
-function compile(el, root) {
-	assert(el !== null);
-	//compile all the things
-	var els = document.querySelectorAll('script[scene]');
-
-	for(var idx = 0; idx < els.length; idx++) {
-		var el = els[idx];
-		var sceneId = _.getAttrValByName(el, 'scene');
-		if(root.childs[sceneId]) {
-			//warning
-			console.log('can not set the same scene id');
-			//then ignore this scene
-			continue;
-		}
-		//set app data structure
-		root.childs[sceneId] = new Scene({el: el, root: root, sceneId: sceneId});
-		root.childs[sceneId].parent = root;
-		//start compile the scene function
-		compileDirectives(root.childs[sceneId]);
 	}
 }
 

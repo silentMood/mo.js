@@ -4,8 +4,27 @@ var base = require('./base');
 var event = require('../core_mixins/event');
 var compiler = require('../compiler');
 var mount = require('../mount');
+var Scene = require('./scene');
 
 var router = require('../router');
+
+function generateScenes(root) {
+	var tpls = document.querySelectorAll('script[scene]');
+
+	for(var idx = 0; idx < tpls.length; idx++) {
+		var tpl = tpls[idx];
+		var sceneId = _.getAttrValByName(tpl, 'scene');
+		if(root.childs[sceneId]) {
+			//warning
+			console.log('can not set the same scene id');
+			//then ignore this scene
+			continue;
+		}
+		//set app data structure
+		root.childs[sceneId] = new Scene({tpl: tpl, root: root, sceneId: sceneId});
+		root.childs[sceneId].parent = root;
+	}
+}
 
 function X(opts) {
 	var self = this;
@@ -23,7 +42,7 @@ function X(opts) {
 	}
 
 	//compile all the scenes
-	compiler.$compile(self.container, self);
+	generateScenes(self);
 
 	//set the main interface
 	var attrs = self.container.attributes;

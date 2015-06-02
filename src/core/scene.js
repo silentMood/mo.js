@@ -3,6 +3,7 @@ var base = require('./base');
 var event = require('../core_mixins/event');
 var lifecycle = require('../core_mixins/lifecycle');
 var config = require('../config');
+var compiler = require('../compiler');
 
 var baseId = 0;
 function generateSceneId() {
@@ -21,10 +22,8 @@ function Scene(opts) {
 	self.fns = [];
 	self.ufns = [];
 
-	//el
-	var el = document.createElement('div');
-	el.innerHTML = opts.el.innerHTML;
-	self.el = el;
+	//template
+	self.tpl = opts.tpl;
 
 	self.$init();
 }
@@ -36,6 +35,7 @@ Scene.prototype = _.extend(event, lifecycle, base, {
 
 		self.$on('hook:prepare', function(next) {
 			self.$insertEl();
+			compiler.$compile(self);
 			self.$link()
 			next();
 		});
@@ -74,6 +74,10 @@ Scene.prototype = _.extend(event, lifecycle, base, {
 		this.$emit(eventName, cb);
 	},
 	$insertEl: function() {
+		//get from template and insert
+		var el = document.createElement('div');
+		el.innerHTML = this.tpl.innerHTML;
+		this.el = el;
 		this.parent.container.appendChild(this.el);
 	},
 	$removeEl: function() {

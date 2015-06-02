@@ -1,5 +1,6 @@
 module.exports = {
-	extend: function(s, ss) {
+	//no need to test
+	extend: function() {
 		var res = {};
 		var args = Array.prototype.slice.call(arguments);
 		args.forEach(function(arg) {
@@ -11,12 +12,11 @@ module.exports = {
 	},
 	
 	mixin: function(target, source) {
-		keys = Object.keys(source);
+		var keys = Object.keys(source);
+		var key;
 		for(var idx = 0; idx < keys.length; idx++) {
-			var key = keys[idx];
-			if(target[key]) {
-				continue;
-			}
+			key = keys[idx];
+			if(target[key]) continue;
 			target[key] = source[key];
 		}
 	}
