@@ -54,12 +54,12 @@ module.exports = function(grunt) {
       browsers: {
         options: {
           browsers: ['Chrome', 'Safari'],
-          reporters: ['progress']
+          reporters: ['spec']
         }
       },
       coverage: {
         options: {
-          browsers: ['PhantomJS'],
+          browsers: ['Chrome'],
           reporters: ['progress', 'coverage'],
           preprocessors: {
             'src/**/*.js': ['commonjs', 'coverage'],
@@ -93,6 +93,7 @@ module.exports = function(grunt) {
     //todo
   ]);
   grunt.registerTask('test', [
-    'karma:browsers'
+    'karma:browsers',
+    'karma:coverage'
   ]);
 };
