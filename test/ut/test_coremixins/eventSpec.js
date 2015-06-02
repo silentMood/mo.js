@@ -1,5 +1,5 @@
 //test module
-var event = require('../../src/core_mixins/event');
+var event = require('../../../src/core_mixins/event');
 
 describe('event', function(){
 	var fn;

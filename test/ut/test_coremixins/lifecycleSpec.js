@@ -1,5 +1,5 @@
 //test module
-var lifecycle = require('../../src/core_mixins/lifecycle');
+var lifecycle = require('../../../src/core_mixins/lifecycle');
 
 describe('life cycle', function(){
 	var target = lifecycle;

@@ -1,2 +1,0 @@
-require('./domSpec');
-require('./objSpec');

@@ -1,2 +1,0 @@
-require('./eventSpec');
-require('./lifecycleSpec');

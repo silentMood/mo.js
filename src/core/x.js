@@ -34,11 +34,14 @@ function X(opts) {
 	self.childs = self.scenes = {};
 
 	//set total container
-	if(opts && opts.elId) {
-		self.container = document.querySelector('#' + opts.elId);
+	if(!opts || !opts.elId) {
+		//error
+		return console.log('please spec the elId for stage');
 	}
-	else {
-		self.container = document.body;
+	self.container = document.querySelector('#' + opts.elId);
+	if(!self.container) {
+		//error
+		return console.log('the container did not exist');
 	}
 
 	//generate all the scenes

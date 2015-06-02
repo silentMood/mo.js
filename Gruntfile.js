@@ -14,13 +14,13 @@ module.exports = function(grunt) {
         command: 'rm -rf dist'
       },
       mv4test: {
-        command: 'cp dist/bundle.js tt/'
+        command: 'cp dist/bundle.js dev/'
       }
     },
     connect: {
       server: {
         options: {
-          base: ["tt"],
+          base: ["dev"],
           hostname: "0.0.0.0"
         }
       },
@@ -31,7 +31,7 @@ module.exports = function(grunt) {
     },
     watch: {
       livereload: {
-        files: ["src/**/*.js", "tt/index.html"],
+        files: ["src/**/*.js", "dev/index.html"],
         tasks: ["browserify", "exec:mv4test"],
         options: {
           livereload: 35729
@@ -43,11 +43,11 @@ module.exports = function(grunt) {
         frameworks: ['jasmine', 'commonjs'],
         files: [
           'src/**/*.js',
-          'unitTest/**/*.js'
+          'test/ut/**/*.js'
         ],
         preprocessors: {
           'src/**/*.js': ['commonjs'],
-          'unitTest/**/*.js': ['commonjs']
+          'test/ut/**/*.js': ['commonjs']
         },
         singleRun: true
       },
@@ -63,7 +63,7 @@ module.exports = function(grunt) {
           reporters: ['progress', 'coverage'],
           preprocessors: {
             'src/**/*.js': ['commonjs', 'coverage'],
-            'unitTest/**/*.js': ['commonjs']
+            'test/ut/**/*.js': ['commonjs']
           },
           coverageReporter: {
             reporters: [
