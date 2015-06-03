@@ -41,11 +41,12 @@ Scene.prototype = _.extend(event, lifecycle, base, {
 		});
 
 		self.$on('hook:ready', function(next){
-			self.$runAllFns('hook:readyForDirBehaviour', next);
+			self.$runAllFns('hook:readyForDirBehavior', next);
 		});
 
 		self.$on('hook:hold', function(next) {
-			self.$runAllFns('hook:holdForDirBehaviour', next);
+			console.log('hook:hold');
+			self.$runAllFns('hook:holdForDirBehavior', next);
 		});
 
 		self.$on('hook:left', function(next) {
@@ -66,22 +67,27 @@ Scene.prototype = _.extend(event, lifecycle, base, {
 	},
 	$runAllFns: function(eventName, next) {
 		var from = 0;
-		var to = this.events[eventName].length;
-		var cb = function() {
-			from++;
-			if(from === to) next();
+		if(this.events && this.events[eventName]) {
+			var to = this.events[eventName].length;
+			var cb = function() {
+				from++;
+				if(from === to) next();
+			}
+			this.$emit(eventName, cb);
 		}
-		this.$emit(eventName, cb);
+		else {
+			next()
+		}
 	},
 	$insertEl: function() {
 		//get from template and insert
 		var el = document.createElement('div');
 		el.innerHTML = this.tpl.innerHTML;
 		this.el = el;
-		this.parent.container.appendChild(this.el);
+		this.parent.el.appendChild(this.el);
 	},
 	$removeEl: function() {
-		this.parent.container.removeChild(this.el);
+		this.parent.el.removeChild(this.el);
 	},
 	$canUnmount: function() {
 		return this._status === 3;

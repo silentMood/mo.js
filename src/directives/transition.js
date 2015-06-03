@@ -74,15 +74,15 @@ AnimationController = {
     this.handleHold = this.handleHold.bind(this);
 
     //when ready then trigger enter animation
-    this.parent.$on('hook:readyForDirBehaviour', this.handleReady);
+    this.parent.$on('hook:readyForDirBehavior', this.handleReady);
     //when hold then trigger left animation
-    this.parent.$on('hook:holdForDirBehaviour', this.handleHold);
+    this.parent.$on('hook:holdForDirBehavior', this.handleHold);
   },
   unbind: function() {
     this.cleanClass(EnterTransMap);
     this.cleanClass(LeftTransMap);
-    this.parent.$off('hook:readyForDirBehaviour');
-    this.parent.$off('hook:holdForDirBehaviour');
+    this.parent.$off('hook:readyForDirBehavior');
+    this.parent.$off('hook:holdForDirBehavior');
     //reset the map
     EnterTransMap = {};
     LeftTransMap = {};

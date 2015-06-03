@@ -33,22 +33,22 @@ function X(opts) {
 	//create app data structure
 	self.childs = self.scenes = {};
 
-	//set total container
+	//set total el
 	if(!opts || !opts.elId) {
 		//error
 		return console.log('please spec the elId for stage');
 	}
-	self.container = document.querySelector('#' + opts.elId);
-	if(!self.container) {
+	self.el = document.querySelector('#' + opts.elId);
+	if(!self.el) {
 		//error
-		return console.log('the container did not exist');
+		return console.log('the el did not exist');
 	}
 
 	//generate all the scenes
 	generateScenes(self);
 
 	//set the main interface
-	var attrs = self.container.attributes;
+	var attrs = self.el.attributes;
 	for(var i = 0; i < attrs.length; i ++) {
 		attr = attrs.item(i);
 		if(attr.nodeName.match(/main/i)) {
@@ -65,7 +65,7 @@ function X(opts) {
 	router.$config(self);
 
 	//start the scene life cycle
-	mount.$mount(self.currentScene);
+	router.$route(self.currentScene.sceneId);
 }
 
 X.prototype = _.extend(event, base);
