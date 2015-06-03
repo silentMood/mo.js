@@ -31,7 +31,7 @@ module.exports = function(grunt) {
     },
     watch: {
       livereload: {
-        files: ["src/**/*.js", "dev/index.html"],
+        files: ["src/**/*.js"],
         tasks: ["browserify", "exec:mv4test"],
         options: {
           livereload: 35729
@@ -53,7 +53,7 @@ module.exports = function(grunt) {
       },
       browsers: {
         options: {
-          browsers: ['Chrome', 'Safari'],
+          browsers: ['Chrome'],
           reporters: ['spec']
         }
       },
