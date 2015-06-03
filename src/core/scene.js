@@ -45,7 +45,6 @@ Scene.prototype = _.extend(event, lifecycle, base, {
 		});
 
 		self.$on('hook:hold', function(next) {
-			console.log('hook:hold');
 			self.$runAllFns('hook:holdForDirBehavior', next);
 		});
 

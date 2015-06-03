@@ -1,9 +1,9 @@
-var Scene = require('../../../src/core/scene');
+var Directive = require('../../../src/core/directive');
 var mockDom = require('../mock/mock_dom');
 var compiler = require('../../../src/compiler/compile');
 
-describe('scene', function(){
-	var scene;
+describe('directive', function(){
+	var directive;
 	var compile;
 
 	beforeAll(function(){

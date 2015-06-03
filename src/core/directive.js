@@ -20,7 +20,7 @@ function Directive(opts) {
 	//get the link fn and unlink fn
 	var dir = directives[this.dirName];
 	if(!dir) {
-		console.log('can not recognise ' + this.dirName + 'directive');
+		console.log('can not recognise ' + this.dirName + ' directive');
 		this.bind = function(){};
 		this.unbind = function(){};
 	}
