@@ -44,5 +44,4 @@ describe('scene', function(){
 		expect(scene.$unlink).toHaveBeenCalled();
 		expect(scene.$removeEl).toHaveBeenCalled();
 	});
-	//others no need to test
 });

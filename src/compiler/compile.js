@@ -20,7 +20,7 @@ function generateLinkFns(el, scene) {
 				scene: scene,
 				el: el
 			});
-			//set app data structure
+			//set app data structure, it's better to move inside
 			scene.childs.push(dir);
 			dir.parent = scene;
 			//set the link fns
@@ -32,11 +32,12 @@ function generateLinkFns(el, scene) {
 	}
 	//remove the linked attribute
 	linkedAttrNames.forEach(function(name) {
-		attrs.removeNamedItem(name)
+		attrs.removeNamedItem(name);
 	});
 }
 
 function compile(scene) {
+	//assert error
 	assert(scene !== null);
 
 	var $nodes = [scene.el];

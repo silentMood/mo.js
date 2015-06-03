@@ -62,13 +62,9 @@ function X(opts) {
 		return console.log('have not set the main interface yet');
 	}
 
-	//config the router
+	//config the router and mount the main scene
 	router.$config(self);
-	console.log(router.$config.toString());
-
-	//start the scene life cycle
 	router.$route(self.currentScene.id);
-	console.log(router.$route.toString());
 }
 
 X.prototype = _.extend(event, base, {
