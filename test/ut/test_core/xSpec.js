@@ -6,38 +6,40 @@ describe('X', function(){
 	var x;
   var config;
   var route;
+  var container;
 
   beforeAll(function(){
-    var container = document.createElement('div');
+    container = document.createElement('div');
     container.innerHTML = mockDom;
     document.body.appendChild(container);
 
     config = router.$config;
-    router.$config = jasmine.createSpy('spy');
+    router.$config = jasmine.createSpy('config');
 
     route = router.$route;
-    router.$route = jasmine.createSpy('spy');
+    router.$route = jasmine.createSpy('route');
+
+    x = new X({elId: "app"});
   });
 
   afterAll(function() {
+    container.remove();
     router.$config = config;
     router.$route = route;
   });
 
-  it('new X without a elId', function(){
-  	x = new X;
-  	expect(Object.keys(x.childs).length).toBe(0);
-  });
-
-  it('new X with a elId which does not exist', function(){
-  	x = new X({elId: "test"});
-  	expect(Object.keys(x.childs).length).toBe(0);
-  });
-
-  it('new X with a exist elId', function(){
-  	x = new X({elId: "app"});
+  it('new X', function(){
   	expect(Object.keys(x.childs).length).toBe(2);
     expect(router.$config).toHaveBeenCalled();
     expect(router.$route).toHaveBeenCalled();
+  });
+
+  it('isSceneIdExist', function() {
+    expect(x.$isSceneIdAlreadyExist('scene1')).toBe(true);
+  });
+
+  it('get sceneById', function() {
+    var scene = x.$getSceneBySceneId('scene1');
+    expect(scene !== null).toBe(true);
   });
 });

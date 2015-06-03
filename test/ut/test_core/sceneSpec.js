@@ -5,9 +5,10 @@ var compiler = require('../../../src/compiler/compile');
 describe('scene', function(){
 	var scene;
 	var compile;
+	var container;
 
 	beforeAll(function(){
-		var container = document.createElement('div');
+		container = document.createElement('div');
     container.innerHTML = mockDom;
     document.body.appendChild(container);
 
@@ -26,6 +27,7 @@ describe('scene', function(){
 	});
 
 	afterAll(function() {
+		container.remove();
 		//revert the mock
 		compiler.$compile = compile;
 	});

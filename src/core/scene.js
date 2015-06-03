@@ -90,6 +90,9 @@ Scene.prototype = _.extend(event, lifecycle, base, {
 	},
 	$canUnmount: function() {
 		return this._status === 3;
+	},
+	$isInit: function() {
+		return this._status === 0;
 	}
 });
 

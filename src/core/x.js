@@ -14,15 +14,16 @@ function generateScenes(root) {
 	for(var idx = 0; idx < tpls.length; idx++) {
 		var tpl = tpls[idx];
 		var sceneId = _.getAttrValByName(tpl, 'scene');
-		if(root.childs[sceneId]) {
+		if(root.$isSceneIdAlreadyExist(sceneId)) {
 			//warning
 			console.log('can not set the same scene id');
 			//then ignore this scene
 			continue;
 		}
 		//set app data structure
-		root.childs[sceneId] = new Scene({tpl: tpl, root: root, sceneId: sceneId});
-		root.childs[sceneId].parent = root;
+		var scene = new Scene({tpl: tpl, root: root, sceneId: sceneId});
+		scene.parent = root;
+		root.childs.push(scene);
 	}
 }
 
@@ -31,7 +32,7 @@ function X(opts) {
 	//events
 	self.events = {};
 	//create app data structure
-	self.childs = self.scenes = {};
+	self.childs = self.scenes = [];
 
 	//set total el
 	if(!opts || !opts.elId) {
@@ -52,7 +53,7 @@ function X(opts) {
 	for(var i = 0; i < attrs.length; i ++) {
 		attr = attrs.item(i);
 		if(attr.nodeName.match(/main/i)) {
-			self.currentScene = self.scenes[attr.value];
+			self.currentScene = self.$getSceneBySceneId(attr.value);
 			break;
 		}
 	}
@@ -63,11 +64,24 @@ function X(opts) {
 
 	//config the router
 	router.$config(self);
+	console.log(router.$config.toString());
 
 	//start the scene life cycle
-	router.$route(self.currentScene.sceneId);
+	router.$route(self.currentScene.id);
+	console.log(router.$route.toString());
 }
 
-X.prototype = _.extend(event, base);
+X.prototype = _.extend(event, base, {
+	$isSceneIdAlreadyExist: function(sceneId) {
+		return !!this.childs.filter(function(child) {
+			return child.id === sceneId;
+		}).length;
+	},
+	$getSceneBySceneId: function(sceneId) {
+		return this.childs.filter(function(child) {
+			return child.id === sceneId;
+		})[0];
+	}
+});
 
 module.exports = X;

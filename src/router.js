@@ -7,19 +7,24 @@ module.exports = {
 	},
 	$route: function(sceneId) {
 		var self = this;
-		var scene = self.app.scenes[sceneId];
+		var scene = self.app.$getSceneBySceneId(sceneId);
 		if(!scene) {
 			//error
 			return console.log('the scene you want to redirect does not exist');
 		}
-		//when old scene unmount ok then mount new scene
-		self.app.currentScene.$once('hook:goto', function() {
-			//reset the current scene
-			self.app.currentScene = scene;
-			//mount the new scene
+		
+		if(self.app.currentScene.$isInit()) {
 			mount.$mount(self.app.currentScene);
-		})
-		//unmount the old scene
-		mount.$unmount(self.app.currentScene);
+		} else {
+			//after old scene unmount finish
+			self.app.currentScene.$once('hook:goto', function() {
+				//reset the current scene
+				self.app.currentScene = scene;
+				//mount the new scene
+				mount.$mount(self.app.currentScene);
+			})
+			//unmount the old scene
+			mount.$unmount(self.app.currentScene);
+		}
 	}
 }
