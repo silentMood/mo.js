@@ -6,7 +6,7 @@
   "author": "silentmood",
   "license": "MIT",
   "scripts": {
-    "test": "grunt test"
+    "test": "grunt ut"
   },
   "devDependencies": {
     "grunt": "~0.4.2",

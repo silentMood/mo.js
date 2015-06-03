@@ -92,8 +92,7 @@ module.exports = function(grunt) {
     'browserify',
     //todo
   ]);
-  grunt.registerTask('test', [
-    'karma:browsers',
-    'karma:coverage'
+  grunt.registerTask('ut', [
+    'karma:browsers'
   ]);
 };
