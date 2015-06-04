@@ -16,7 +16,7 @@ function generateScenes(root) {
 		var sceneId = _.getAttrValByName(tpl, 'scene');
 		if(root.$isSceneIdAlreadyExist(sceneId)) {
 			//warning
-			console.log('can not set the same scene id');
+			console.warn('can not set the same scene id: ' + sceneId);
 			//then ignore this scene
 			continue;
 		}
@@ -37,12 +37,12 @@ function X(opts) {
 	//set total el
 	if(!opts || !opts.elId) {
 		//error
-		return console.log('please spec the elId for stage');
+		return console.error('please spec the elId for stage');
 	}
 	self.el = document.querySelector('#' + opts.elId);
 	if(!self.el) {
 		//error
-		return console.log('the el did not exist');
+		return console.error('the el did not exist, please check the elId that you given');
 	}
 
 	//generate all the scenes
@@ -59,7 +59,7 @@ function X(opts) {
 	}
 	if(!self.currentScene) {
 		//error
-		return console.log('have not set the main interface yet');
+		return console.error('have not set the main interface yet');
 	}
 
 	//config the router and mount the main scene

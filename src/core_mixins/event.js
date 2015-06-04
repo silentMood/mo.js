@@ -17,7 +17,7 @@ module.exports = {
 		for(var idx = 0; idx < this.events[eventName].length; idx++) {
 			if(fn === this.events[eventName][idx]) {
 				//warn
-				return console.log('same fn should only bind once');
+				return console.warn('same fn should only bind once');
 			}
 		}
 		this.events[eventName].push(fn);

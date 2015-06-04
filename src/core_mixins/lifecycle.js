@@ -5,7 +5,7 @@ module.exports = {
 	$pushStatus: function(err) {
 		if(err) {
 			//error
-			return console.log(err);
+			return console.error(err);
 		}
 		var next = arguments.callee.bind(this);
 		this._status++;
