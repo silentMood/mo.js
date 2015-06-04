@@ -15,13 +15,6 @@ AnimationController = {
 
     self.triggerTransition(LeftTransMap, next);
   },
-  cleanClass: function(transitionMap) {
-    Object.keys(transitionMap).forEach(function(key){
-      transitionMap[key].forEach(function(elem) {
-        _.removeClass(elem.el, elem.transEffect);
-      });
-    });
-  },
   triggerTransition: function(transitionMap, cb) {
     var self = this;
 
@@ -70,17 +63,12 @@ AnimationController = {
   },
   //inject the arguments
   bind: function(expression) {
-    this.handleReady = this.handleReady.bind(this);
-    this.handleHold = this.handleHold.bind(this);
-
     //when ready then trigger enter animation
-    this.parent.$on('hook:readyForDirBehavior', this.handleReady);
+    this.parent.$on('hook:readyForDirBehavior', this.handleReady.bind(this));
     //when hold then trigger left animation
-    this.parent.$on('hook:holdForDirBehavior', this.handleHold);
+    this.parent.$on('hook:holdForDirBehavior', this.handleHold.bind(this));
   },
   unbind: function() {
-    this.cleanClass(EnterTransMap);
-    this.cleanClass(LeftTransMap);
     this.parent.$off('hook:readyForDirBehavior');
     this.parent.$off('hook:holdForDirBehavior');
     //reset the map
@@ -90,6 +78,12 @@ AnimationController = {
 }
 
 EnterAnimation = {
+  //for test
+  $detail: function() {
+    return {
+      enter: EnterTransMap
+    }
+  },
   bind: function() {
     var priority, transEffect;
     var expression = this.expression;
@@ -111,6 +105,12 @@ EnterAnimation = {
 }
 
 LeftAnimation = {
+  //for test
+  $detail: function() {
+    return {
+      left: LeftTransMap
+    }
+  },
   bind: function() {
     var priority, transEffect;
     var expression = this.expression;
@@ -132,6 +132,7 @@ LeftAnimation = {
 }
 
 module.exports = {
+  //directives
   enteranimation: EnterAnimation,
   leftanimation: LeftAnimation,
   animationcontroller: AnimationController
