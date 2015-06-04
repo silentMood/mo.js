@@ -9,7 +9,6 @@ function Directive(opts) {
 
 	//events container
 	this.events = {};
-
 	//directive name
 	this.dirName = opts.dirName;
 	//directive el
@@ -27,7 +26,6 @@ function Directive(opts) {
 	else {
 		assert(dir.bind !== null);
 		assert(dir.unbind !== null);
-
 		_.mixin(this, dir);
 	}
 }

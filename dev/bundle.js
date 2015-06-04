@@ -28,7 +28,7 @@ function generateLinkFns(el, scene) {
 				scene: scene,
 				el: el
 			});
-			//set app data structure
+			//set app data structure, it's better to move inside
 			scene.childs.push(dir);
 			dir.parent = scene;
 			//set the link fns
@@ -40,11 +40,12 @@ function generateLinkFns(el, scene) {
 	}
 	//remove the linked attribute
 	linkedAttrNames.forEach(function(name) {
-		attrs.removeNamedItem(name)
+		attrs.removeNamedItem(name);
 	});
 }
 
 function compile(scene) {
+	//assert error
 	assert(scene !== null);
 
 	var $nodes = [scene.el];
@@ -93,10 +94,12 @@ module.exports = {
 		var scopes = [this];
 		while(scopes.length) {
 			var scope = scopes[0];
-			var childs = scope.childs
-			for(var i = 0; i < childs.length; i++) {
-				childs[i].$emit(eventName, info);
-				scopes.push(childs[i]);
+			var childs = scope.childs;
+			if(scope.childs) {
+				for(var i = 0; i < childs.length; i++) {
+					childs[i].$emit(eventName, info);
+					scopes.push(childs[i]);
+				}
 			}
 			scopes.shift();
 		}
@@ -125,7 +128,7 @@ function Directive(opts) {
 	//get the link fn and unlink fn
 	var dir = directives[this.dirName];
 	if(!dir) {
-		console.log('can not recognise ' + this.dirName + 'directive');
+		console.log('can not recognise ' + this.dirName + ' directive');
 		this.bind = function(){};
 		this.unbind = function(){};
 	}
@@ -184,11 +187,11 @@ Scene.prototype = _.extend(event, lifecycle, base, {
 		});
 
 		self.$on('hook:ready', function(next){
-			self.$runAllFns('hook:readyForDirBehaviour', next);
+			self.$runAllFns('hook:readyForDirBehavior', next);
 		});
 
 		self.$on('hook:hold', function(next) {
-			self.$runAllFns('hook:holdForDirBehaviour', next);
+			self.$runAllFns('hook:holdForDirBehavior', next);
 		});
 
 		self.$on('hook:left', function(next) {
@@ -209,25 +212,33 @@ Scene.prototype = _.extend(event, lifecycle, base, {
 	},
 	$runAllFns: function(eventName, next) {
 		var from = 0;
-		var to = this.events[eventName].length;
-		var cb = function() {
-			from++;
-			if(from === to) next();
+		if(this.events && this.events[eventName]) {
+			var to = this.events[eventName].length;
+			var cb = function() {
+				from++;
+				if(from === to) next();
+			}
+			this.$emit(eventName, cb);
 		}
-		this.$emit(eventName, cb);
+		else {
+			next()
+		}
 	},
 	$insertEl: function() {
 		//get from template and insert
 		var el = document.createElement('div');
 		el.innerHTML = this.tpl.innerHTML;
 		this.el = el;
-		this.parent.container.appendChild(this.el);
+		this.parent.el.appendChild(this.el);
 	},
 	$removeEl: function() {
-		this.parent.container.removeChild(this.el);
+		this.parent.el.removeChild(this.el);
 	},
 	$canUnmount: function() {
 		return this._status === 3;
+	},
+	$isInit: function() {
+		return this._status === 0;
 	}
 });
 
@@ -249,15 +260,16 @@ function generateScenes(root) {
 	for(var idx = 0; idx < tpls.length; idx++) {
 		var tpl = tpls[idx];
 		var sceneId = _.getAttrValByName(tpl, 'scene');
-		if(root.childs[sceneId]) {
+		if(root.$isSceneIdAlreadyExist(sceneId)) {
 			//warning
 			console.log('can not set the same scene id');
 			//then ignore this scene
 			continue;
 		}
 		//set app data structure
-		root.childs[sceneId] = new Scene({tpl: tpl, root: root, sceneId: sceneId});
-		root.childs[sceneId].parent = root;
+		var scene = new Scene({tpl: tpl, root: root, sceneId: sceneId});
+		scene.parent = root;
+		root.childs.push(scene);
 	}
 }
 
@@ -266,25 +278,28 @@ function X(opts) {
 	//events
 	self.events = {};
 	//create app data structure
-	self.childs = self.scenes = {};
+	self.childs = self.scenes = [];
 
-	//set total container
-	if(opts && opts.elId) {
-		self.container = document.querySelector('#' + opts.elId);
+	//set total el
+	if(!opts || !opts.elId) {
+		//error
+		return console.log('please spec the elId for stage');
 	}
-	else {
-		self.container = document.body;
+	self.el = document.querySelector('#' + opts.elId);
+	if(!self.el) {
+		//error
+		return console.log('the el did not exist');
 	}
 
-	//compile all the scenes
+	//generate all the scenes
 	generateScenes(self);
 
 	//set the main interface
-	var attrs = self.container.attributes;
+	var attrs = self.el.attributes;
 	for(var i = 0; i < attrs.length; i ++) {
 		attr = attrs.item(i);
 		if(attr.nodeName.match(/main/i)) {
-			self.currentScene = self.scenes[attr.value];
+			self.currentScene = self.$getSceneBySceneId(attr.value);
 			break;
 		}
 	}
@@ -293,14 +308,23 @@ function X(opts) {
 		return console.log('have not set the main interface yet');
 	}
 
-	//config the router
+	//config the router and mount the main scene
 	router.$config(self);
-
-	//start the scene life cycle
-	mount.$mount(self.currentScene);
+	router.$route(self.currentScene.id);
 }
 
-X.prototype = _.extend(event, base);
+X.prototype = _.extend(event, base, {
+	$isSceneIdAlreadyExist: function(sceneId) {
+		return !!this.childs.filter(function(child) {
+			return child.id === sceneId;
+		}).length;
+	},
+	$getSceneBySceneId: function(sceneId) {
+		return this.childs.filter(function(child) {
+			return child.id === sceneId;
+		})[0];
+	}
+});
 
 module.exports = X;
 },{"../assert":1,"../compiler":3,"../core_mixins/event":9,"../mount":15,"../router":16,"../utils":18,"./base":5,"./scene":7}],9:[function(require,module,exports){
@@ -427,6 +451,8 @@ module.exports = {
 var transition = require('./transition');
 var go = require('./goto');
 var _ = require('../utils');
+//directive will hook the scene's life cycle
+//so when bind and unbind should be careful so that no need
 
 module.exports = _.extend(transition, go);
 },{"../utils":18,"./goto":11,"./transition":13}],13:[function(require,module,exports){
@@ -446,13 +472,6 @@ AnimationController = {
     var self = this;
 
     self.triggerTransition(LeftTransMap, next);
-  },
-  cleanClass: function(transitionMap) {
-    Object.keys(transitionMap).forEach(function(key){
-      transitionMap[key].forEach(function(elem) {
-        _.removeClass(elem.el, elem.transEffect);
-      });
-    });
   },
   triggerTransition: function(transitionMap, cb) {
     var self = this;
@@ -502,19 +521,14 @@ AnimationController = {
   },
   //inject the arguments
   bind: function(expression) {
-    this.handleReady = this.handleReady.bind(this);
-    this.handleHold = this.handleHold.bind(this);
-
     //when ready then trigger enter animation
-    this.parent.$on('hook:readyForDirBehaviour', this.handleReady);
+    this.parent.$on('hook:readyForDirBehavior', this.handleReady.bind(this));
     //when hold then trigger left animation
-    this.parent.$on('hook:holdForDirBehaviour', this.handleHold);
+    this.parent.$on('hook:holdForDirBehavior', this.handleHold.bind(this));
   },
   unbind: function() {
-    this.cleanClass(EnterTransMap);
-    this.cleanClass(LeftTransMap);
-    this.parent.$off('hook:readyForDirBehaviour');
-    this.parent.$off('hook:holdForDirBehaviour');
+    this.parent.$off('hook:readyForDirBehavior');
+    this.parent.$off('hook:holdForDirBehavior');
     //reset the map
     EnterTransMap = {};
     LeftTransMap = {};
@@ -522,6 +536,12 @@ AnimationController = {
 }
 
 EnterAnimation = {
+  //for test
+  $detail: function() {
+    return {
+      enter: EnterTransMap
+    }
+  },
   bind: function() {
     var priority, transEffect;
     var expression = this.expression;
@@ -543,6 +563,12 @@ EnterAnimation = {
 }
 
 LeftAnimation = {
+  //for test
+  $detail: function() {
+    return {
+      left: LeftTransMap
+    }
+  },
   bind: function() {
     var priority, transEffect;
     var expression = this.expression;
@@ -564,6 +590,7 @@ LeftAnimation = {
 }
 
 module.exports = {
+  //directives
   enteranimation: EnterAnimation,
   leftanimation: LeftAnimation,
   animationcontroller: AnimationController
@@ -598,20 +625,25 @@ module.exports = {
 	},
 	$route: function(sceneId) {
 		var self = this;
-		var scene = self.app.scenes[sceneId];
+		var scene = self.app.$getSceneBySceneId(sceneId);
 		if(!scene) {
 			//error
 			return console.log('the scene you want to redirect does not exist');
 		}
-		//when old scene unmount ok then mount new scene
-		self.app.currentScene.$once('hook:goto', function() {
-			//reset the current scene
-			self.app.currentScene = scene;
-			//mount the new scene
+		
+		if(self.app.currentScene.$isInit()) {
 			mount.$mount(self.app.currentScene);
-		})
-		//unmount the old scene
-		mount.$unmount(self.app.currentScene);
+		} else {
+			//after old scene unmount finish
+			self.app.currentScene.$once('hook:goto', function() {
+				//reset the current scene
+				self.app.currentScene = scene;
+				//mount the new scene
+				mount.$mount(self.app.currentScene);
+			})
+			//unmount the old scene
+			mount.$unmount(self.app.currentScene);
+		}
 	}
 }
 },{"./mount":15}],17:[function(require,module,exports){
@@ -656,7 +688,6 @@ module.exports = {
 		});
 		return res;
 	},
-	
 	mixin: function(target, source) {
 		var keys = Object.keys(source);
 		var key;
