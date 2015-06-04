@@ -117,7 +117,6 @@ function Directive(opts) {
 
 	//events container
 	this.events = {};
-
 	//directive name
 	this.dirName = opts.dirName;
 	//directive el
@@ -128,14 +127,13 @@ function Directive(opts) {
 	//get the link fn and unlink fn
 	var dir = directives[this.dirName];
 	if(!dir) {
-		console.log('can not recognise ' + this.dirName + ' directive');
+		console.warn('can not recognise ' + this.dirName + ' directive');
 		this.bind = function(){};
 		this.unbind = function(){};
 	}
 	else {
 		assert(dir.bind !== null);
 		assert(dir.unbind !== null);
-
 		_.mixin(this, dir);
 	}
 }
@@ -262,7 +260,7 @@ function generateScenes(root) {
 		var sceneId = _.getAttrValByName(tpl, 'scene');
 		if(root.$isSceneIdAlreadyExist(sceneId)) {
 			//warning
-			console.log('can not set the same scene id');
+			console.warn('can not set the same scene id: ' + sceneId);
 			//then ignore this scene
 			continue;
 		}
@@ -283,12 +281,12 @@ function X(opts) {
 	//set total el
 	if(!opts || !opts.elId) {
 		//error
-		return console.log('please spec the elId for stage');
+		return console.error('please spec the elId for stage');
 	}
 	self.el = document.querySelector('#' + opts.elId);
 	if(!self.el) {
 		//error
-		return console.log('the el did not exist');
+		return console.error('the el did not exist, please check the elId that you given');
 	}
 
 	//generate all the scenes
@@ -305,7 +303,7 @@ function X(opts) {
 	}
 	if(!self.currentScene) {
 		//error
-		return console.log('have not set the main interface yet');
+		return console.error('have not set the main interface yet');
 	}
 
 	//config the router and mount the main scene
@@ -347,7 +345,7 @@ module.exports = {
 		for(var idx = 0; idx < this.events[eventName].length; idx++) {
 			if(fn === this.events[eventName][idx]) {
 				//warn
-				return console.log('same fn should only bind once');
+				return console.warn('same fn should only bind once');
 			}
 		}
 		this.events[eventName].push(fn);
@@ -395,7 +393,7 @@ module.exports = {
 	$pushStatus: function(err) {
 		if(err) {
 			//error
-			return console.log(err);
+			return console.error(err);
 		}
 		var next = arguments.callee.bind(this);
 		this._status++;
