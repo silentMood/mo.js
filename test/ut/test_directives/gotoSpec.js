@@ -2,7 +2,7 @@ var Directive = require('../../../src/core/directive');
 var config = require('../../../src/config');
 var mockDom = require('../mock/mock_dom');
 
-describe('compiler', function(){
+describe('directive go', function(){
 	var container;
 	var dir;
 
