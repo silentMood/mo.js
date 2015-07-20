@@ -605,11 +605,8 @@ module.exports = {
 	$unmount: function(scene) {
 		//life cycle
 		if(!scene.$canUnmount()) {
-			//warn
-			console.log('can not leave, because the status is not right');
-			return;
+			return console.warn('can not leave, because the status is not right');
 		};
-
 		scene.$pushStatus();
 	}
 }
